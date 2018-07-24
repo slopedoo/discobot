@@ -1,4 +1,4 @@
-#discobot
+# discobot
 
 Plex Discord bot
 
