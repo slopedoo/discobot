@@ -1,7 +1,9 @@
 #discobot
+
 Plex Discord bot
 
-## Commands
+
+### Commands
 !toptv - shows most played TV shows from the last month
 
 !topmovie - shows most played movies from the last month
