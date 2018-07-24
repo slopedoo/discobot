@@ -117,7 +117,7 @@ async def search(ctx, *, text):
                 #shortener = Shortener('Tinyurl')
                 # A bit of formatting
                 full_title = "`" + str(r['full_title'])
-                full_title += " "*(45-len(full_title)) + ">` "
+                full_title += " "*(45-len(full_title)) + "|` "
                 # Print title + shortened URL
                 #tv += "\n" + full_title + "{}".format(shortener.short(url2))
                 tv += "\n" + full_title + "{}".format(url2)
@@ -126,7 +126,7 @@ async def search(ctx, *, text):
                 url2 = url + r['rating_key']
                 #shortener = Shortener('Tinyurl')
                 full_title = "`" + str(r['full_title']) + " (" + str(r['year']) + ")"
-                full_title += " "*(45-len(full_title)) + ">` "
+                full_title += " "*(45-len(full_title)) + "|` "
                 #movies += "\n" + full_title + "{}".format(shortener.short(url2))
                 movies += "\n" + full_title + "{}".format(url2)
         if i == 'artist':
@@ -134,7 +134,7 @@ async def search(ctx, *, text):
                 url2 = url + r['rating_key']
                 #shortener = Shortener('Tinyurl')
                 full_title = "`" + str(r['full_title'])
-                full_title += " "*(45-len(full_title)) + ">` "
+                full_title += " "*(45-len(full_title)) + "|` "
                 #music += "\n" + full_title + "{}".format(shortener.short(url2))
                 music += "\n" + full_title + "{}".format(url2)
 
@@ -199,28 +199,11 @@ async def request(ctx, arg):
 		    # Send the request
                     requests.post(url+imdb)
                     movie_title = movie['title'] + " (" + str(movie['year']) + ")"
-                    with open(API_PATH+'tmdb_api.txt', 'r') as myfile:
-                        tmdb_api = myfile.read().replace('\n', '')
 
-                    r = requests.get("https://api.themoviedb.org/3/movie/" + imdb + "/release_dates?api_key=" + tmdb_api)
-                    results = r.json()
-                    results = results['results']
-                    digital_date = ""
-                    physical_date = ""
-                    # Find the digital and physical US release date.
-                    for i in results:
-                        if i['iso_3166_1'] == "US":
-                            for a in i['release_dates']:
-                                if a['type'] == 4 and digital_date == "":
-                                    digital_date = a['release_date'][:10]
-                                if a['type'] == 5 and physical_date == "":
-                                    physical_date = a['release_date'][:10]
-                        if i['iso_3166_1'] == "SE":
-                            for a in i['release_dates']:
-                                if a['type'] == 4 and digital_date == "":
-                                    digital_date = a['release_date'][:10]
-                                if a['type'] == 5 and physical_date == "":
-                                    physical_date = a['release_date'][:10]
+                    dates = release_date(imdb)
+                    digital_date = dates['digital']
+                    physical_date = dates['physical']
+
                     msg = "Request for " + movie_title + " sent to downloader! It will be notified in <#432847333894389770> when available."
                     if digital_date != "":
                         msg += "```Digital Release date:  " + digital_date + "```"
@@ -234,7 +217,56 @@ async def request(ctx, arg):
         else:
             await bot.send_message(ctx.message.channel, "Not a valid IMDB URL!")
     else:
-        await bot.send_message(ctx.message.channel, "Not a valid URL!")
+        arg = ctx.message.content[9:]
+        ia = IMDb()
+        movie = ia.search_movie(arg)
+        c = 0
+        choices = []
+
+        for i in movie:
+            if 'movie' in i['kind']:
+                if c == 10:
+                    break
+                choices.append({'title' : i['title'] , 'year' : str(i['year']) , 'imdb_url' : "<https://www.imdb.com/title/tt" + i.movieID + ">" , 'imdb_id' : "tt"+i.movieID})
+                c += 1
+
+        msg = ""
+        c = 1
+
+        if choices != "":
+            msg += "The top results:\n"
+            for i in choices:
+                title = ""
+                if len(i['title']) > 32:
+                    s_title = i['title'][0:32] + "..."
+                    title += "`" + str(c) + ". " + s_title + " (" + i['year'] + ")"
+                else:
+                    title += "`" + str(c) + ". " + i['title'] + " (" + i['year'] + ")"
+                title += " "*(46-len(title)) + "|`"
+                msg += title + "{:<25}".format(i['imdb_url'] + "\n")
+                c += 1
+            await bot.send_message(ctx.message.channel, msg)
+            await bot.send_message(ctx.message.channel, "Choose a movie by typing the corresponding number")
+            response = await bot.wait_for_message(author=ctx.message.author,timeout=60)
+            if response != None:
+                if int(response.content) > len(choices):
+                    await bot.send_message(ctx.message.channel, "Not a valid option.")
+                    return
+                response = int(response.content)-1
+                movie_title = choices[response]['title'] + " (" + choices[response]['year'] + ")"
+                imdb_id = choices[response]['imdb_id']
+                requests.post(url+imdb_id)
+
+                dates = release_date(imdb_id)
+                digital_date = dates['digital']
+                physical_date = dates['physical']
+
+                msg = "Request for " + movie_title + " sent to downloader! It will be notified in <#432847333894389770> when available."
+                if digital_date != "":
+                    msg += "```Digital Release date:  " + digital_date + "```"
+                if physical_date != "":
+                    msg += "```Physical Release date: " + physical_date + "```"
+                await bot.send_message(ctx.message.channel, msg)
 
 @bot.command(pass_context=True)
 async def streams(ctx):
@@ -300,33 +332,12 @@ async def releasedate(ctx, arg):
                 movie = ia.get_movie(imdb_id)
                 if 'movie' in movie['kind']:
                     movie_title = movie['title'] + " (" + str(movie['year']) + ")"
-                    with open(API_PATH+'tmdb_api.txt', 'r') as myfile:
-                        tmdb_api = myfile.read().replace('\n', '')
 
-                    r = requests.get("https://api.themoviedb.org/3/movie/" + imdb + "/release_dates?api_key=" + tmdb_api)
-                    results = r.json()
-                    results = results['results']
-                    theatrical_date = ""
-                    digital_date = ""
-                    physical_date = ""
-                    for i in results:
-                        if i['iso_3166_1'] == "US":
-                            for a in i['release_dates']:
-                                if a['type'] == 3 and theatrical_date == "":
-                                    theatrical_date = a['release_date'][:10]
-                                if a['type'] == 4 and digital_date == "":
-                                    digital_date = a['release_date'][:10]
-                                if a['type'] == 5 and physical_date == "":
-                                    physical_date = a['release_date'][:10]
-                    for i in results:
-                        if i['iso_3166_1'] == "SE":
-                            for a in i['release_dates']:
-                                if a['type'] == 3 and theatrical_date == "":
-                                    theatrical_date = a['release_date'][:10]
-                                if a['type'] == 4 and digital_date == "":
-                                    digital_date = a['release_date'][:10]
-                                if a['type'] == 5 and physical_date == "":
-                                    physical_date = a['release_date'][:10]
+                    dates = release_date(imdb)
+                    theatrical_date = dates['theatrical']
+                    digital_date = dates['digital']
+                    physical_date = dates['physical']
+
                     msg = "Release dates for " + movie_title + ":"
                     if theatrical_date != "":
                         msg += "```In theaters:           " + theatrical_date + "```"
@@ -335,14 +346,75 @@ async def releasedate(ctx, arg):
                     if physical_date != "":
                         msg += "```Physical Release date: " + physical_date + "```"
                     await bot.send_message(ctx.message.channel, msg)
-                else:
-                    await bot.send_message(ctx.message.channel, "Not a movie! Requests only works with Movies. <@!205394235522809867> fix manually plz.")
             else:
                 await bot.send_message(ctx.message.channel, "Not a valid IMDB URL!")
         else:
             await bot.send_message(ctx.message.channel, "Not a valid IMDB URL!")
     else:
         await bot.send_message(ctx.message.channel, "Not a valid URL!")
+
+# Function to check release dates
+# Uses the TMDb API
+def release_date(imdb):
+    with open(API_PATH+'tmdb_api.txt', 'r') as myfile:
+        tmdb_api = myfile.read().replace('\n', '')
+
+    r = requests.get("https://api.themoviedb.org/3/movie/" + imdb + "/release_dates?api_key=" + tmdb_api)
+    results = r.json()
+    results = results['results']
+    release_dates = { 'theatrical':'' , 'digital':'' , 'physical':''}
+    # First check US releases
+    for i in results:
+        if i['iso_3166_1'] == "US":
+            for a in i['release_dates']:
+                if a['type'] == 3 and release_dates['theatrical'] == "":
+                    release_dates['theatrical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+                if a['type'] == 4 and release_dates['digital'] == "":
+                    release_dates['digital'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+                if a['type'] == 5 and release_dates['physical'] == "":
+                    release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+    # Then check UK
+    for i in results:
+        if i['iso_3166_1'] == "UK":
+            for a in i['release_dates']:
+                if a['type'] == 3 and release_dates['theatrical'] == "":
+                    release_dates['theatrical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+                if a['type'] == 4 and release_dates['digital'] == "":
+                    release_dates['digital'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+                if a['type'] == 5 and release_dates['physical'] == "":
+                    release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+    # Then check Sweden
+    for i in results:
+        if i['iso_3166_1'] == "SE":
+            for a in i['release_dates']:
+                if a['type'] == 3 and release_dates['theatrical'] == "":
+                    release_dates['theatrical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+                if a['type'] == 4 and release_dates['digital'] == "":
+                    release_dates['digital'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+                if a['type'] == 5 and release_dates['physical'] == "":
+                    release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+    # Then Norway
+    for i in results:
+        if i['iso_3166_1'] == "NO":
+            for a in i['release_dates']:
+                if a['type'] == 3 and release_dates['theatrical'] == "":
+                    release_dates['theatrical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+                if a['type'] == 4 and release_dates['digital'] == "":
+                    release_dates['digital'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+                if a['type'] == 5 and release_dates['physical'] == "":
+                    release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+    # Lastly check every other country
+    for i in results:
+        for a in i['release_dates']:
+            if a['type'] == 3 and release_dates['theatrical'] == "":
+                release_dates['theatrical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+            if a['type'] == 4 and release_dates['digital'] == "":
+                release_dates['digital'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+            if a['type'] == 5 and release_dates['physical'] == "":
+                release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+
+    return release_dates
+
 
 # Discord API key
 disc_api = ""
