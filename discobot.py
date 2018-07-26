@@ -1,7 +1,7 @@
 ## Written by Actar/Slopedoo
 ##
 ## Discord Bot for Plex to help with automation and self-servicing for users
-## API key files should be named pp_api.txt, cp_api.txt and discord_api.txt for PlexPy, Couchpotato and Discord respectively
+## API key files should be named pp.api, cp.api and discord.api for PlexPy, Couchpotato and Discord respectively
 
 # -*- coding: utf-8 -*-
 import discord
@@ -38,7 +38,7 @@ bot = commands.Bot(command_prefix = PREFIX)
 # PlexPy API URL
 pp_apikey = ""
 
-with open(API_PATH+'pp_api.txt', 'r') as myfile:
+with open(API_PATH+'pp.api', 'r') as myfile:
     pp_apikey = myfile.read().replace('\n', '')
 
 ppurl = "http://localhost:" + PLEXPY_PORT + "/api/v2?apikey=" + pp_apikey + "&cmd="
@@ -161,8 +161,8 @@ async def status(ctx):
     memoryTot = int(mem[0]/1000000)
     memoryUse = memoryTot - int(mem[1]/1000000)
     temp = psutil.sensors_temperatures()['coretemp'][0][1]
-    total_mov = psutil.disk_usage('/home/sigurd/mov1')[0] + psutil.disk_usage('/home/sigurd/mov2')[0] + psutil.disk_usage('/home/sigurd/mov3')[0] + psutil.disk_usage('/home/sigurd/mov4')[0] + psutil.disk_usage('/home/sigurd/mov5')[0] + psutil.disk_usage('/home/sigurd/owncloud')[0]
-    used_mov = psutil.disk_usage('/home/sigurd/mov1')[1] + psutil.disk_usage('/home/sigurd/mov2')[1] + psutil.disk_usage('/home/sigurd/mov3')[1] + psutil.disk_usage('/home/sigurd/mov4')[1] + psutil.disk_usage('/home/sigurd/mov5')[1] + psutil.disk_usage('/home/sigurd/owncloud')[1]
+    total_mov = psutil.disk_usage('/home/sigurd/mov1')[0] + psutil.disk_usage('/home/sigurd/mov2')[0] + psutil.disk_usage('/home/sigurd/mov3')[0] + psutil.disk_usage('/home/sigurd/mov4')[0] + psutil.disk_usage('/home/sigurd/mov5')[0] + psutil.disk_usage('/home/sigurd/owncloud')[0]+ psutil.disk_usage('/home/sigurd/mov6')[0]
+    used_mov = psutil.disk_usage('/home/sigurd/mov1')[1] + psutil.disk_usage('/home/sigurd/mov2')[1] + psutil.disk_usage('/home/sigurd/mov3')[1] + psutil.disk_usage('/home/sigurd/mov4')[1] + psutil.disk_usage('/home/sigurd/mov5')[1] + psutil.disk_usage('/home/sigurd/owncloud')[1]+ psutil.disk_usage('/home/sigurd/mov6')[1]
     total_tv = psutil.disk_usage('/home/sigurd/tv1')[0] + psutil.disk_usage('/home/sigurd/tv2')[0] + psutil.disk_usage('/home/sigurd/tv3')[0] + psutil.disk_usage('/home/sigurd/tv4')[0]
     used_tv = psutil.disk_usage('/home/sigurd/tv1')[1] + psutil.disk_usage('/home/sigurd/tv2')[1] + psutil.disk_usage('/home/sigurd/tv3')[1] + psutil.disk_usage('/home/sigurd/tv4')[1]
     total_mov = round(total_mov / 1000000000000,1)
@@ -179,7 +179,7 @@ async def request(ctx, arg):
     # Couchpotato API URL. Gets put on watchlist, which is then grabbed by Radarr
     cp_api = ""
 
-    with open(API_PATH+'cp_api.txt', 'r') as myfile:
+    with open(API_PATH+'cp.api', 'r') as myfile:
         cp_api = myfile.read().replace('\n', '')
 
     url = "http://localhost:" + COUCHPOTATO_PORT + "/api/" + cp_api + "/movie.add?identifier="
@@ -227,7 +227,7 @@ async def request(ctx, arg):
             if 'movie' in i['kind']:
                 if c == 10:
                     break
-                choices.append({'title' : i['title'] , 'year' : str(i['year']) , 'imdb_url' : "<https://www.imdb.com/title/tt" + i.movieID + ">" , 'imdb_id' : "tt"+i.movieID})
+                choices.append({'title' : i['long imdb title'] , 'imdb_url' : "<https://www.imdb.com/title/tt" + i.movieID + ">" , 'imdb_id' : "tt"+i.movieID})
                 c += 1
 
         msg = ""
@@ -237,11 +237,11 @@ async def request(ctx, arg):
             msg += "The top results:\n"
             for i in choices:
                 title = ""
-                if len(i['title']) > 32:
-                    s_title = i['title'][0:32] + "..."
-                    title += "`" + str(c) + ". " + s_title + " (" + i['year'] + ")"
+                if len(i['title']) > 38:
+                    s_title = i['title'][0:38] + "..."
+                    title += "`" + str(c) + ". " + s_title
                 else:
-                    title += "`" + str(c) + ". " + i['title'] + " (" + i['year'] + ")"
+                    title += "`" + str(c) + ". " + i['title']
                 title += " "*(46-len(title)) + "|`"
                 msg += title + "{:<25}".format(i['imdb_url'] + "\n")
                 c += 1
@@ -253,7 +253,7 @@ async def request(ctx, arg):
                     await bot.send_message(ctx.message.channel, "Not a valid option.")
                     return
                 response = int(response.content)-1
-                movie_title = choices[response]['title'] + " (" + choices[response]['year'] + ")"
+                movie_title = choices[response]['title']
                 imdb_id = choices[response]['imdb_id']
                 requests.post(url+imdb_id)
 
@@ -356,7 +356,7 @@ async def releasedate(ctx, arg):
 # Function to check release dates
 # Uses the TMDb API
 def release_date(imdb):
-    with open(API_PATH+'tmdb_api.txt', 'r') as myfile:
+    with open(API_PATH+'tmdb.api', 'r') as myfile:
         tmdb_api = myfile.read().replace('\n', '')
 
     r = requests.get("https://api.themoviedb.org/3/movie/" + imdb + "/release_dates?api_key=" + tmdb_api)
@@ -419,7 +419,7 @@ def release_date(imdb):
 # Discord API key
 disc_api = ""
 
-with open(API_PATH+'discord_api.txt', 'r') as myfile:
+with open(API_PATH+'discord.api', 'r') as myfile:
     disc_api = myfile.read().replace('\n', '')
 
 bot.run(disc_api)
