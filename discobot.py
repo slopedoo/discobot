@@ -161,10 +161,10 @@ async def status(ctx):
     memoryTot = int(mem[0]/1000000)
     memoryUse = memoryTot - int(mem[1]/1000000)
     temp = psutil.sensors_temperatures()['coretemp'][0][1]
-    total_mov = psutil.disk_usage('/home/sigurd/mov1')[0] + psutil.disk_usage('/home/sigurd/mov2')[0] + psutil.disk_usage('/home/sigurd/mov3')[0] + psutil.disk_usage('/home/sigurd/mov4')[0] + psutil.disk_usage('/home/sigurd/mov5')[0] + psutil.disk_usage('/home/sigurd/owncloud')[0]+ psutil.disk_usage('/home/sigurd/mov6')[0]
-    used_mov = psutil.disk_usage('/home/sigurd/mov1')[1] + psutil.disk_usage('/home/sigurd/mov2')[1] + psutil.disk_usage('/home/sigurd/mov3')[1] + psutil.disk_usage('/home/sigurd/mov4')[1] + psutil.disk_usage('/home/sigurd/mov5')[1] + psutil.disk_usage('/home/sigurd/owncloud')[1]+ psutil.disk_usage('/home/sigurd/mov6')[1]
-    total_tv = psutil.disk_usage('/home/sigurd/tv1')[0] + psutil.disk_usage('/home/sigurd/tv2')[0] + psutil.disk_usage('/home/sigurd/tv3')[0] + psutil.disk_usage('/home/sigurd/tv4')[0]
-    used_tv = psutil.disk_usage('/home/sigurd/tv1')[1] + psutil.disk_usage('/home/sigurd/tv2')[1] + psutil.disk_usage('/home/sigurd/tv3')[1] + psutil.disk_usage('/home/sigurd/tv4')[1]
+    total_mov = psutil.disk_usage('/home/sigurd/mov1')[0] + psutil.disk_usage('/home/sigurd/mov2')[0] + psutil.disk_usage('/home/sigurd/mov3')[0] + psutil.disk_usage('/home/sigurd/mov4')[0] + psutil.disk_usage('/home/sigurd/mov5')[0] + psutil.disk_usage('/home/sigurd/owncloud')[0]
+    used_mov = psutil.disk_usage('/home/sigurd/mov1')[1] + psutil.disk_usage('/home/sigurd/mov2')[1] + psutil.disk_usage('/home/sigurd/mov3')[1] + psutil.disk_usage('/home/sigurd/mov4')[1] + psutil.disk_usage('/home/sigurd/mov5')[1] + psutil.disk_usage('/home/sigurd/owncloud')[1]
+    total_tv = psutil.disk_usage('/home/sigurd/tv1')[0] + psutil.disk_usage('/home/sigurd/tv2')[0] + psutil.disk_usage('/home/sigurd/tv3')[0] + psutil.disk_usage('/home/sigurd/tv4')[0] + psutil.disk_usage('/home/sigurd/tv4')[0]
+    used_tv = psutil.disk_usage('/home/sigurd/tv1')[1] + psutil.disk_usage('/home/sigurd/tv2')[1] + psutil.disk_usage('/home/sigurd/tv3')[1] + psutil.disk_usage('/home/sigurd/tv4')[1] + psutil.disk_usage('/home/sigurd/tv4')[1]
     total_mov = round(total_mov / 1000000000000,1)
     used_mov = round(used_mov / 1000000000000,1)
     mov_pct = round(used_mov / total_mov*100,1)
@@ -320,6 +320,9 @@ async def new(ctx):
 async def releasedate(ctx, arg):
     """Check release date with IMDB URL (TV shows not working)"""
     # Make sure it's a valid URL
+    for char in '<>':
+        arg = arg.replace(char, '')
+
     if arg.startswith('http'):
         # 4th argument in an IMDB URL is the movie ID
         if len(arg.split('/')) >= 4:
