@@ -29,6 +29,9 @@ COUCHPOTATO_PORT = "5050"
 # Plex URL is typically app.plex.tv/desktop#!/server/<your identifier>/details. This url is used for linking to entries in the library
 #PLEX_URL = "https://app.plex.tv/desktop#!/server/840fd4be6d4142952abf5182e8dc1cc4bfae60db/details"
 PLEX_URL = "http://plex.nerud.no"
+# Path to media folders. My mountpoints are named mov1, mov2, tv1, tv2 etc. so the disk usage function will filter based on "mov" and "tv"
+MOV_PATH = "/home/sigurd/mov"
+TV_PATH = "/home/sigurd/tv"
 
 ############################
 
@@ -161,10 +164,26 @@ async def status(ctx):
     memoryTot = int(mem[0]/1000000)
     memoryUse = memoryTot - int(mem[1]/1000000)
     temp = psutil.sensors_temperatures()['coretemp'][0][1]
-    total_mov = psutil.disk_usage('/home/sigurd/mov1')[0] + psutil.disk_usage('/home/sigurd/mov2')[0] + psutil.disk_usage('/home/sigurd/mov3')[0] + psutil.disk_usage('/home/sigurd/mov4')[0] + psutil.disk_usage('/home/sigurd/mov5')[0] + psutil.disk_usage('/home/sigurd/owncloud')[0]
-    used_mov = psutil.disk_usage('/home/sigurd/mov1')[1] + psutil.disk_usage('/home/sigurd/mov2')[1] + psutil.disk_usage('/home/sigurd/mov3')[1] + psutil.disk_usage('/home/sigurd/mov4')[1] + psutil.disk_usage('/home/sigurd/mov5')[1] + psutil.disk_usage('/home/sigurd/owncloud')[1]
-    total_tv = psutil.disk_usage('/home/sigurd/tv1')[0] + psutil.disk_usage('/home/sigurd/tv2')[0] + psutil.disk_usage('/home/sigurd/tv3')[0] + psutil.disk_usage('/home/sigurd/tv4')[0] + psutil.disk_usage('/home/sigurd/tv4')[0]
-    used_tv = psutil.disk_usage('/home/sigurd/tv1')[1] + psutil.disk_usage('/home/sigurd/tv2')[1] + psutil.disk_usage('/home/sigurd/tv3')[1] + psutil.disk_usage('/home/sigurd/tv4')[1] + psutil.disk_usage('/home/sigurd/tv4')[1]
+
+    partitions = psutil.disk_partitions()
+    mov = []
+    tv = []
+    total_mov = used_mov = total_tv = used_tv = 0
+
+    for p in partitions:
+        if MOV_PATH in p.mountpoint:
+            mov.append(p.mountpoint)
+        if TV_PATH in p.mountpoint:
+            tv.append(p.mountpoint)
+
+    for p in mov:
+        total_mov += psutil.disk_usage(p)[0]
+        used_mov += psutil.disk_usage(p)[1]
+
+    for p in tv:
+        total_tv += psutil.disk_usage(p)[0]
+        used_tv += psutil.disk_usage(p)[1]
+
     total_mov = round(total_mov / 1000000000000,1)
     used_mov = round(used_mov / 1000000000000,1)
     mov_pct = round(used_mov / total_mov*100,1)
@@ -217,12 +236,14 @@ async def request(ctx, arg):
         else:
             await bot.send_message(ctx.message.channel, "Not a valid IMDB URL!")
     else:
+        # If the arg is not a URL we do a search for the movie on IMDb
         arg = ctx.message.content[9:]
         ia = IMDb()
         movie = ia.search_movie(arg)
         c = 0
         choices = []
 
+        # Append the choices list with the top 10 search results
         for i in movie:
             if 'movie' in i['kind']:
                 if c == 10:
@@ -235,6 +256,7 @@ async def request(ctx, arg):
 
         if choices != "":
             msg += "The top results:\n"
+
             for i in choices:
                 title = ""
                 if len(i['title']) > 38:
@@ -245,16 +267,21 @@ async def request(ctx, arg):
                 title += " "*(46-len(title)) + "|`"
                 msg += title + "{:<25}".format(i['imdb_url'] + "\n")
                 c += 1
+
             await bot.send_message(ctx.message.channel, msg)
             await bot.send_message(ctx.message.channel, "Choose a movie by typing the corresponding number")
             response = await bot.wait_for_message(author=ctx.message.author,timeout=60)
+
             if response != None:
+                # Check that the response is within the range of options
                 if int(response.content) > len(choices):
                     await bot.send_message(ctx.message.channel, "Not a valid option.")
                     return
+
                 response = int(response.content)-1
                 movie_title = choices[response]['title']
                 imdb_id = choices[response]['imdb_id']
+                # Send the request to Radarr
                 requests.post(url+imdb_id)
 
                 dates = release_date(imdb_id)
@@ -262,6 +289,7 @@ async def request(ctx, arg):
                 physical_date = dates['physical']
 
                 msg = "Request for " + movie_title + " sent to downloader! It will be notified in <#432847333894389770> when available."
+
                 if digital_date != "":
                     msg += "```Digital Release date:  " + digital_date + "```"
                 if physical_date != "":
@@ -274,6 +302,7 @@ async def streams(ctx):
     r = requests.get(ppurl+"get_activity")
     a = r.json()
     msg = ""
+
     for i in a['response']['data']['sessions']:
         full_title = ""
         # If title length is longer than 25 we need to cut it
@@ -298,22 +327,27 @@ async def new(ctx):
     msg = ""
     date_added =""
     c = 1
+
     for i in a['response']['data']['recently_added']:
         d = int(i['added_at'])
         date_added = time.strftime('%d.%m.%Y %H:%M', time.localtime(d))
         title = ""
+
         # Get the season/episode if its a TV show
         if i['parent_title'] != "":
             title = i['parent_title'] + ", "
         full_title = str(c) + ". " + title + i['title']
+
         # Add year for movies
         if i['media_type'] == "movie":
             full_title += " (" + str(i['year']) + ")"
+
         # If title length is longer than 35 we need to cut it
         if len(full_title) > 35:
             full_title = full_title[0:35] + "[...]"
         msg += "{:41s}".format(full_title) + "{:>8s}".format(i['library_name']) + " | Added at " + date_added + "\n"
         c = c + 1
+
     await bot.send_message(ctx.message.channel, "Most recently added items: ```" + msg + "```")
 
 @bot.command(pass_context=True)
@@ -335,12 +369,10 @@ async def releasedate(ctx, arg):
                 movie = ia.get_movie(imdb_id)
                 if 'movie' in movie['kind']:
                     movie_title = movie['title'] + " (" + str(movie['year']) + ")"
-
                     dates = release_date(imdb)
                     theatrical_date = dates['theatrical']
                     digital_date = dates['digital']
                     physical_date = dates['physical']
-
                     msg = "Release dates for " + movie_title + ":"
                     if theatrical_date != "":
                         msg += "```In theaters:           " + theatrical_date + "```"
