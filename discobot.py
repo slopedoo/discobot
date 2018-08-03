@@ -388,7 +388,7 @@ async def releasedate(ctx, arg):
     else:
         await bot.send_message(ctx.message.channel, "Not a valid URL!")
 
-# Function to check release dates
+# Function to check release dates. Returns a dict with 'theatrical', 'digital' and 'physical' indexes
 # Uses the TMDb API
 def release_date(imdb):
     with open(API_PATH+'tmdb.api', 'r') as myfile:
@@ -440,6 +440,8 @@ def release_date(imdb):
                     release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
     # Lastly check every other country
     for i in results:
+        if release_dates['theatrical'] != "" and release_dates['digital'] != "" and release_dates['physical'] != "":
+            return
         for a in i['release_dates']:
             if a['type'] == 3 and release_dates['theatrical'] == "":
                 release_dates['theatrical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
