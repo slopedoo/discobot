@@ -386,7 +386,63 @@ async def releasedate(ctx, arg):
         else:
             await bot.send_message(ctx.message.channel, "Not a valid IMDB URL!")
     else:
-        await bot.send_message(ctx.message.channel, "Not a valid URL!")
+        # If the arg is not a URL we do a search for the movie on IMDb
+        arg = ctx.message.content[9:]
+        ia = IMDb()
+        movie = ia.search_movie(arg)
+        c = 0
+        choices = []
+
+        # Append the choices list with the top 10 search results
+        for i in movie:
+            if 'movie' in i['kind']:
+                if c == 10:
+                    break
+                choices.append({'title' : i['long imdb title'] , 'imdb_url' : "<https://www.imdb.com/title/tt" + i.movieID + ">" , 'imdb_id' : "tt"+i.movieID})
+                c += 1
+        msg = ""
+        c = 1
+
+        if choices != "":
+            msg += "The top results:\n"
+
+            for i in choices:
+                title = ""
+                if len(i['title']) > 38:
+                    s_title = i['title'][0:38] + "..."
+                    title += "`" + str(c) + ". " + s_title
+                else:
+                    title += "`" + str(c) + ". " + i['title']
+                title += " "*(46-len(title)) + "|`"
+                msg += title + "{:<25}".format(i['imdb_url'] + "\n")
+                c += 1
+
+            await bot.send_message(ctx.message.channel, msg)
+            await bot.send_message(ctx.message.channel, "Choose a movie by typing the corresponding number")
+            response = await bot.wait_for_message(author=ctx.message.author,timeout=60)
+
+            if response != None:
+                # Check that the response is within the range of options
+                if int(response.content) > len(choices):
+                    await bot.send_message(ctx.message.channel, "Not a valid option.")
+                    return
+
+                response = int(response.content)-1
+                movie_title = choices[response]['title']
+                imdb_id = choices[response]['imdb_id']
+                print(imdb_id)
+
+                dates = release_date(imdb_id)
+                msg = "Release dates for " + movie_title
+
+                if dates['theatrical'] != "":
+                    msg += "```Theatrical Release date:  " + dates['theatrical'] + "```"
+                if dates['digital'] != "":
+                    msg += "```Digital Release date:  " + dates['digital'] + "```"
+                if dates['physical'] != "":
+                    msg += "```Physical Release date: " + dates['physical'] + "```"
+                await bot.send_message(ctx.message.channel, msg)
+
 
 # Function to check release dates. Returns a dict with 'theatrical', 'digital' and 'physical' indexes
 # Uses the TMDb API
@@ -440,8 +496,8 @@ def release_date(imdb):
                     release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
     # Lastly check every other country
     for i in results:
-        if release_dates['theatrical'] != "" and release_dates['digital'] != "" and release_dates['physical'] != "":
-            return
+        #if release_dates['theatrical'] != "" and release_dates['digital'] != "" and release_dates['physical'] != "":
+        #    break
         for a in i['release_dates']:
             if a['type'] == 3 and release_dates['theatrical'] == "":
                 release_dates['theatrical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
@@ -449,7 +505,6 @@ def release_date(imdb):
                 release_dates['digital'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
             if a['type'] == 5 and release_dates['physical'] == "":
                 release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-
     return release_dates
 
 
