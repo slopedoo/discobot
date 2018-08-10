@@ -3,7 +3,7 @@ import json
 
 #https://realpython.com/python-json/
 
-sonarr_address = "http://88.95.246.17:8989/api/series?apikey="
+sonarr_address = "http://localhost:8989/api/series?apikey="
 with open('sonarr.api', 'r') as myfile:
         api_key = myfile.read().replace('\n', '')
 PATH = "/home/sigurd/tv5/Series/"
