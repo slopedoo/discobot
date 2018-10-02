@@ -5,6 +5,7 @@
 
 # -*- coding: utf-8 -*-
 import discord
+import sonarr
 from discord.ext.commands import Bot
 from discord.ext import commands
 from uptime import uptime
@@ -230,7 +231,13 @@ async def request(ctx, arg):
                         msg += "```Physical Release date: " + physical_date + "```"
                     await bot.send_message(ctx.message.channel, msg)
                 else:
-                    await bot.send_message(ctx.message.channel, "Not a movie! Requests only works with Movies. <@!205394235522809867> fix manually plz.")
+                    #await bot.send_message(ctx.message.channel, "Not a movie! Requests only works with Movies. <@!205394235522809867> fix manually plz.")
+                    response = sonarr.request(temp)
+                    if response <= 400:
+                        msg = "TV Show request sent to downloader! It will be notified in <#432847333894389770> when available."
+                    else:
+                        msg = "Something went wrong with your request. The TV show already exists or something else broke."
+                    await bot.send_message(ctx.message.channel, msg)
             else:
                 await bot.send_message(ctx.message.channel, "Not a valid IMDB URL!")
         else:
