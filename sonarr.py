@@ -33,67 +33,71 @@ def request(imdb_id):
     get_url = "https://api.thetvdb.com/search/series?imdbId=" + imdb_id
     get_series = requests.get(get_url, headers=json_headers)
     series = json.loads(get_series.text)
-    series = series['data'][0]
+    if 'data' in series:
+        series = series['data'][0]
 
-    banner_url = "https://www.thetvdb.com/banners/"
-    images_url = "https://api.thetvdb.com/series/" + str(series['id']) + "/images/"
-    fanart = requests.get(images_url+"query?keyType=fanart", headers=json_headers)
-    fanart = json.loads(fanart.text)
-    fanart_url = banner_url + fanart['data'][0]['fileName']
+        banner_url = "https://www.thetvdb.com/banners/"
+        images_url = "https://api.thetvdb.com/series/" + str(series['id']) + "/images/"
+        fanart = requests.get(images_url+"query?keyType=fanart", headers=json_headers)
+        fanart = json.loads(fanart.text)
+        fanart_url = banner_url + fanart['data'][0]['fileName']
 
-    poster = requests.get(images_url+"query?keyType=poster", headers=json_headers)
-    poster = json.loads(poster.text)
-    poster_url = banner_url + poster['data'][0]['fileName']
+        poster = requests.get(images_url+"query?keyType=poster", headers=json_headers)
+        poster = json.loads(poster.text)
+        poster_url = banner_url + poster['data'][0]['fileName']
 
-    images = [
-        { "coverType" : "fanart" , "url" : fanart_url },
-        { "coverType" : "banner" , "url" : banner_url+series['banner'] },
-        { "coverType" : "poster" , "url" : poster_url }
-    ]
+        images = [
+            { "coverType" : "fanart" , "url" : fanart_url },
+            { "coverType" : "banner" , "url" : banner_url+series['banner'] },
+            { "coverType" : "poster" , "url" : poster_url }
+        ]
 
-    # get seasons from tvdb
-    seasons_url = "https://api.thetvdb.com/series/" + str(series['id']) + "/episodes/summary"
-    seasons = requests.get(seasons_url, headers=json_headers)
-    seasons = json.loads(seasons.text)
-    num_seasons = seasons['data']['airedSeasons'] # a list of aired seasons (string format)
+        # get seasons from tvdb
+        seasons_url = "https://api.thetvdb.com/series/" + str(series['id']) + "/episodes/summary"
+        seasons = requests.get(seasons_url, headers=json_headers)
+        seasons = json.loads(seasons.text)
+        num_seasons = seasons['data']['airedSeasons'] # a list of aired seasons (string format)
 
-    seasons = []
+        seasons = []
 
-    for i in num_seasons:
-        if int(i) == 0: # don't monitor extras
-            seasons.append({ 'seasonNumber': int(i) , 'monitored': 'false' })
-        else:
-            seasons.append({ 'seasonNumber': int(i) , 'monitored': 'true' }) # convert string to int since this is what Sonarr wants
+        for i in num_seasons:
+            if int(i) == 0: # don't monitor extras
+                seasons.append({ 'seasonNumber': int(i) , 'monitored': 'false' })
+            else:
+                seasons.append({ 'seasonNumber': int(i) , 'monitored': 'true' }) # convert string to int since this is what Sonarr wants
 
-    # put it all together to the structure that Sonarr wants
-    series_structure = {
-        "tvdbId" : series['id'],
-        "title" : series['seriesName'],
-        "rootFolderPath" : PATH,
-        "qualityProfileId" : 3, # 1=Any, 2=SD, 3=720p, 4=1080p, 5=HD-All
-        "titleSlug" : series['slug'],
-        "seasonFolder": "true",
-        "images" : images,
-        "seasons" : seasons,
-        "addOptions":
-        {
-            "ignoreEpisodesWithFiles": "false",
-            "ignoreEpisodesWithoutFiles": "false",
-            "searchForMissingEpisodes": "true"
+        # put it all together to the structure that Sonarr wants
+        series_structure = {
+            "tvdbId" : series['id'],
+            "title" : series['seriesName'],
+            "rootFolderPath" : PATH,
+            "qualityProfileId" : 3, # 1=Any, 2=SD, 3=720p, 4=1080p, 5=HD-All
+            "titleSlug" : series['slug'],
+            "seasonFolder": "true",
+            "images" : images,
+            "seasons" : seasons,
+            "addOptions":
+            {
+                "ignoreEpisodesWithFiles": "false",
+                "ignoreEpisodesWithoutFiles": "false",
+                "searchForMissingEpisodes": "true"
+            }
         }
-    }
 
-    if series_structure['tvdbId'] != 0 or series_structure['title'] != "":
-        json_headers = {'content-type': 'application/json'}
-        r = requests.post(full_url, json=series_structure, headers=json_headers)
-        if "errorMessage" in r.text:
-            status_code = r.status_code
-            r = json.loads(r.text)
-            o = { "successful" : "false", "name" : series_structure['title'], "status_code" : status_code, "error_message" : r[0]['errorMessage'] }
+        if series_structure['tvdbId'] != 0 or series_structure['title'] != "":
+            json_headers = {'content-type': 'application/json'}
+            r = requests.post(full_url, json=series_structure, headers=json_headers)
+            if "errorMessage" in r.text:
+                status_code = r.status_code
+                r = json.loads(r.text)
+                o = { "successful" : "false", "name" : series_structure['title'], "status_code" : status_code, "error_message" : r[0]['errorMessage'] }
+            else:
+                r = json.loads(r.text)
+                o = { "successful" : "true", "name" : r['title'], "status_code" : "", "error_message" : "" }
+            return(o)
         else:
-            r = json.loads(r.text)
-            o = { "successful" : "true", "name" : r['title'], "status_code" : "", "error_message" : "" }
-        return(o)
+            o = { "successful" : "false", "name" : "", "status_code" : 404, "error_message" : "The TV show was not found" }
+            return(o)
     else:
         o = { "successful" : "false", "name" : "", "status_code" : 404, "error_message" : "The TV show was not found" }
         return(o)
