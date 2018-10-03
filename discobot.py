@@ -233,10 +233,14 @@ async def request(ctx, arg):
                 else:
                     #await bot.send_message(ctx.message.channel, "Not a movie! Requests only works with Movies. <@!205394235522809867> fix manually plz.")
                     response = sonarr.request(temp)
-                    if response <= 400:
-                        msg = "TV Show request sent to downloader! It will be notified in <#432847333894389770> when available."
+                    print(response['status_code'])
+                    if response['successful'] == "true":
+                        msg = "Request for " + response['name'] + " sent to downloader! It will be notified in <#432847333894389770> when available."
+                    elif response['successful'] == "false":
+                        msg = "Something went wrong with your request. The TV show already exists or something else broke.\n"
+                        msg += "```ErrorMsg: " + str(response['status_code']) + " - " + response['error_message'] + "```"
                     else:
-                        msg = "Something went wrong with your request. The TV show already exists or something else broke."
+                        msg = "Something went horribly wrong..."
                     await bot.send_message(ctx.message.channel, msg)
             else:
                 await bot.send_message(ctx.message.channel, "Not a valid IMDB URL!")

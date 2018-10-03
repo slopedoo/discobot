@@ -72,6 +72,7 @@ def request(imdb_id):
         "rootFolderPath" : PATH,
         "qualityProfileId" : 3, # 1=Any, 2=SD, 3=720p, 4=1080p, 5=HD-All
         "titleSlug" : series['slug'],
+        "seasonFolder": "true",
         "images" : images,
         "seasons" : seasons,
         "addOptions":
@@ -82,8 +83,17 @@ def request(imdb_id):
         }
     }
 
-    print(series_structure)
     if series_structure['tvdbId'] != 0 or series_structure['title'] != "":
         json_headers = {'content-type': 'application/json'}
         r = requests.post(full_url, json=series_structure, headers=json_headers)
-        return(r.status_code)
+        if "errorMessage" in r.text:
+            status_code = r.status_code
+            r = json.loads(r.text)
+            o = { "successful" : "false", "name" : series_structure['title'], "status_code" : status_code, "error_message" : r[0]['errorMessage'] }
+        else:
+            r = json.loads(r.text)
+            o = { "successful" : "true", "name" : r['title'], "status_code" : "", "error_message" : "" }
+        return(o)
+    else:
+        o = { "successful" : "false", "name" : "", "status_code" : 404, "error_message" : "The TV show was not found" }
+        return(o)
