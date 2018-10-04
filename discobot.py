@@ -1,6 +1,7 @@
 ## Written by Actar/Slopedoo
 ##
 ## Discord Bot for Plex to help with automation and self-servicing for users
+## Requires: discord, uptime, imdb
 
 # -*- coding: utf-8 -*-
 import discord
@@ -8,19 +9,11 @@ import sonarr
 from discord.ext.commands import Bot
 from discord.ext import commands
 from uptime import uptime
-from pyshorteners import Shortener
 from imdb import IMDb
-import asyncio
-import time
-import requests
-import json
-import psutil
-import os
+import asyncio, time, requests, json, psutil, os
 
-import logging
-logging.basicConfig()
-
-### You can change these ###
+#import logging
+#logging.basicConfig()
 
 PREFIX = "!"
 
@@ -50,7 +43,8 @@ PLEX_URL = "http://plex.nerud.no"
 MOV_PATH = "/home/sigurd/mov"
 TV_PATH = "/home/sigurd/tv"
 
-############################
+##################################################################################################################################################################
+##################################################################################################################################################################
 
 discClient = discord.Client()
 bot = commands.Bot(command_prefix = PREFIX)
@@ -205,7 +199,11 @@ async def status(ctx):
     total_tv = round(total_tv / 1000000000000,1)
     used_tv = round(used_tv / 1000000000000,1)
     tv_pct = round(used_tv / total_tv*100,1)
-    await bot.send_message(ctx.message.channel, "System Status:\n```Uptime:    " + str(up) + " days\nCPU usage: " + str(cpu) + "%\nMemory:    " + str(memoryUse) + "KB / " + str(memoryTot) + "KB\nTemp:      " + str(temp) + "°\n\nMovies:    " + str(used_mov) + " TB / " + str(total_mov) + " TB (" + str(mov_pct) + "% used)\nTV Shows:  " + str(used_tv) + " TB / " + str(total_tv) + " TB (" + str(tv_pct) + "% used)```")
+    msg = "System Status:\n```Uptime:    " + str(up) + " days\nCPU usage: " + str(cpu) + "%\n"
+    msg += "Memory:    " + str(memoryUse) + "KB / " + str(memoryTot) + "KB\nTemp:      " + str(temp) + "°\n\n"
+    msg += "Movies:    " + str(used_mov) + " TB / " + str(total_mov) + " TB (" + str(mov_pct) + "% used)\n"
+    msg += "TV Shows:  " + str(used_tv) + " TB / " + str(total_tv) + " TB (" + str(tv_pct) + "% used)```"
+    await bot.send_message(ctx.message.channel, msg)
 
 @bot.command(pass_context=True)
 async def request(ctx, arg):
@@ -223,7 +221,7 @@ async def request(ctx, arg):
             temp = arg.split('/')[4]
             # Check that the movie ID is a valid IMDB ID (starts with tt)
             if temp.startswith('tt'):
-                imdb = arg.split('/')[4]
+                imdb = temp
                 imdb_id = imdb[2:]
                 ia = IMDb()
                 msg = ""
@@ -268,7 +266,7 @@ async def request(ctx, arg):
                 # If the result is a TV show:
                 else:
                     #await bot.send_message(ctx.message.channel, "Not a movie! Requests only works with Movies. <@!205394235522809867> fix manually plz.")
-                    response = sonarr.request(temp)
+                    response = sonarr.request(imdb)
                     print(response['status_code'])
                     if response['successful'] == "true":
                         msg = "Request for " + response['name'] + " sent to downloader! It will be notified in <#432847333894389770> when available."
@@ -279,7 +277,7 @@ async def request(ctx, arg):
                         msg = "Something went horribly wrong..."
                     await bot.send_message(ctx.message.channel, msg)
             else:
-                await bot.send_message(ctx.message.channel, "Not a valid IMDB URL!")
+                await bot.send_message(ctx.message.channel, "Not a valid IMDB URL! It needs to https://www.imdb.com/title/")
         else:
             await bot.send_message(ctx.message.channel, "Not a valid IMDB URL!")
     else:

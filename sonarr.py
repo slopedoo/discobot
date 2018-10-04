@@ -1,16 +1,17 @@
-import requests
-import json
+## Written by Actar/Slopedoo
+##
+## Function for requesting TV show with IMDb ID (i.e. tt123456)
 
-#https://realpython.com/python-json/
+import requests, json
 
 def request(imdb_id):
-    
+    # Define constants
     PATH = "/home/sigurd/tv5/Series/"
     API_PATH = "/home/sigurd/tools/discobot/"
     SONARR_API = "sonarr.api"
-    TVDB_API = 'tvdb_auth.api'
-    SONARR_PORT = '8989'
-    HOST = 'localhost'
+    TVDB_API = "tvdb_auth.api"
+    SONARR_PORT = "8989"
+    HOST = "localhost"
 
     sonarr_address = "http://" + HOST + ":" + SONARR_PORT + "/api/series?apikey="
     with open(API_PATH+SONARR_API, 'r') as myfile:
@@ -18,8 +19,7 @@ def request(imdb_id):
     full_url = sonarr_address + api_key
     json_headers = {'content-type': 'application/json'}
 
-    # tvdb needs an auth token in the request header
-
+    # Tvdb needs an auth token in the request header
     auth_list = open(API_PATH+TVDB_API).read().splitlines()
     auth_string = {
         "apikey": auth_list[0],
@@ -27,16 +27,16 @@ def request(imdb_id):
         "username": auth_list[2]
     }
 
-    # get auth token from the auth_string
+    # Get auth token from the auth_string
     auth = requests.post("https://api.thetvdb.com/login", json=auth_string, headers=json_headers)
     auth_token = json.loads(auth.text)
     auth_token = auth_token['token']
 
-    # append the token to the json_header
+    # Append the token to the json_header
     auth_header = {'Authorization' : 'Bearer '+auth_token}
     json_headers.update(auth_header)
 
-    # get info by IMDb ID
+    # Get info by IMDb ID
     get_url = "https://api.thetvdb.com/search/series?imdbId=" + imdb_id
     get_series = requests.get(get_url, headers=json_headers)
     series = json.loads(get_series.text)
@@ -59,21 +59,21 @@ def request(imdb_id):
             { "coverType" : "poster" , "url" : poster_url }
         ]
 
-        # get seasons from tvdb
+        # Get seasons from tvdb
         seasons_url = "https://api.thetvdb.com/series/" + str(series['id']) + "/episodes/summary"
         seasons = requests.get(seasons_url, headers=json_headers)
         seasons = json.loads(seasons.text)
-        num_seasons = seasons['data']['airedSeasons'] # a list of aired seasons (string format)
+        num_seasons = seasons['data']['airedSeasons'] # A list of aired seasons (string format)
 
         seasons = []
 
         for i in num_seasons:
-            if int(i) == 0: # don't monitor extras
+            if int(i) == 0: # Don't monitor extras
                 seasons.append({ 'seasonNumber': int(i) , 'monitored': 'false' })
             else:
-                seasons.append({ 'seasonNumber': int(i) , 'monitored': 'true' }) # convert string to int since this is what Sonarr wants
+                seasons.append({ 'seasonNumber': int(i) , 'monitored': 'true' }) # Convert string to int since this is what Sonarr wants
 
-        # put it all together to the structure that Sonarr wants
+        # Put it all together to the structure that Sonarr wants
         series_structure = {
             "tvdbId" : series['id'],
             "title" : series['seriesName'],
