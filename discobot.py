@@ -1,7 +1,6 @@
 ## Written by Actar/Slopedoo
 ##
 ## Discord Bot for Plex to help with automation and self-servicing for users
-## API key files should be named pp.api, cp.api and discord.api for PlexPy, Couchpotato and Discord respectively
 
 # -*- coding: utf-8 -*-
 import discord
@@ -24,19 +23,29 @@ logging.basicConfig()
 ### You can change these ###
 
 PREFIX = "!"
+
+# Path to API files
 API_PATH = "/home/sigurd/tools/discobot/"
+
+# Name of the API files. They should only contain the API key of the service and nothing else
 TAUTULLI_API = "pp.api"
 COUCHPOTATO_API = "cp.api"
 RADARR_API = "radarr.api"
 DISCORD_API = "discord.api"
 TMDB_API = "tmdb.api"
 
+# A list of all Radarr movies in Json format. Downloaded through the Radarr API (wget http://localhost:7878/api/movie?apikey=XXXXXXXXXXXXXX) by something like crontab
 RADARR_MOVIE_LIST = "radarr_list.txt"
-PLEXPY_PORT = "8181"
+
+# Host address and port numbers
+HOST = "localhost"
+TAUTULLI_PORT = "8181"
 COUCHPOTATO_PORT = "5050"
+
 # Plex URL is typically app.plex.tv/desktop#!/server/<your identifier>/details. This url is used for linking to entries in the library
 #PLEX_URL = "https://app.plex.tv/desktop#!/server/840fd4be6d4142952abf5182e8dc1cc4bfae60db/details"
 PLEX_URL = "http://plex.nerud.no"
+
 # Path to media folders. My mountpoints are named mov1, mov2, tv1, tv2 etc. so the disk usage function will filter based on "mov" and "tv"
 MOV_PATH = "/home/sigurd/mov"
 TV_PATH = "/home/sigurd/tv"
@@ -46,13 +55,10 @@ TV_PATH = "/home/sigurd/tv"
 discClient = discord.Client()
 bot = commands.Bot(command_prefix = PREFIX)
 
-# PlexPy API URL
-pp_apikey = ""
-
 with open(API_PATH+TAUTULLI_API, 'r') as myfile:
     pp_apikey = myfile.read().replace('\n', '')
 
-ppurl = "http://localhost:" + PLEXPY_PORT + "/api/v2?apikey=" + pp_apikey + "&cmd="
+ppurl = "http://" + HOST + ":" + TAUTULLI_PORT + "/api/v2?apikey=" + pp_apikey + "&cmd="
 
 @bot.event
 async def on_ready():
@@ -207,7 +213,7 @@ async def request(ctx, arg):
     with open(API_PATH+COUCHPOTATO_API, 'r') as myfile:
         cp_api = myfile.read().replace('\n', '')
 
-    url = "http://localhost:" + COUCHPOTATO_PORT + "/api/" + cp_api + "/movie.add?identifier="
+    url = "http://" + HOST +":" + COUCHPOTATO_PORT + "/api/" + cp_api + "/movie.add?identifier="
     imdb = ""
     # Make sure it's a valid URL
     if arg.startswith('http'):
