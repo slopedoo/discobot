@@ -25,6 +25,13 @@ logging.basicConfig()
 
 PREFIX = "!"
 API_PATH = "/home/sigurd/tools/discobot/"
+TAUTULLI_API = "pp.api"
+COUCHPOTATO_API = "cp.api"
+RADARR_API = "radarr.api"
+DISCORD_API = "discord.api"
+TMDB_API = "tmdb.api"
+
+RADARR_MOVIE_LIST = "radarr_list.txt"
 PLEXPY_PORT = "8181"
 COUCHPOTATO_PORT = "5050"
 # Plex URL is typically app.plex.tv/desktop#!/server/<your identifier>/details. This url is used for linking to entries in the library
@@ -42,7 +49,7 @@ bot = commands.Bot(command_prefix = PREFIX)
 # PlexPy API URL
 pp_apikey = ""
 
-with open(API_PATH+'pp.api', 'r') as myfile:
+with open(API_PATH+TAUTULLI_API, 'r') as myfile:
     pp_apikey = myfile.read().replace('\n', '')
 
 ppurl = "http://localhost:" + PLEXPY_PORT + "/api/v2?apikey=" + pp_apikey + "&cmd="
@@ -197,7 +204,7 @@ async def status(ctx):
 async def request(ctx, arg):
     """Request a movie with IMDB URL (TV shows not working)"""
     # Couchpotato API URL. Gets put on watchlist, which is then grabbed by Radarr
-    with open(API_PATH+'cp.api', 'r') as myfile:
+    with open(API_PATH+COUCHPOTATO_API, 'r') as myfile:
         cp_api = myfile.read().replace('\n', '')
 
     url = "http://localhost:" + COUCHPOTATO_PORT + "/api/" + cp_api + "/movie.add?identifier="
@@ -218,7 +225,7 @@ async def request(ctx, arg):
                 if 'movie' in movie['kind']:
                     # Check if the movie already exists in Radarr
                     # A crontab is downloading a list of movies every 2 hours using an API call to Radarr
-                    with open(API_PATH+'radarr_list.txt', 'r') as myfile:
+                    with open(API_PATH+RADARR_MOVIE_LIST, 'r') as myfile:
                         radarr = myfile.read().replace('\n', '')
                     radarr = json.loads(radarr)
                     for i in radarr:
@@ -303,7 +310,7 @@ async def request(ctx, arg):
 
             await bot.send_message(ctx.message.channel, msg)
             await bot.send_message(ctx.message.channel, "Choose a movie by typing the corresponding number")
-            response = await bot.wait_for_message(author=ctx.message.author,timeout=60)
+            response = await bot.wait_for_message(author=ctx.message.author,timeout=30)
 
             if response != None:
                 # Check that the response is within the range of options
@@ -316,7 +323,7 @@ async def request(ctx, arg):
                 imdb_id = choices[response]['imdb_id']
 
                 # Check if the movie already exists
-                with open(API_PATH+'radarr_list.txt', 'r') as myfile:
+                with open(API_PATH+RADARR_MOVIE_LIST, 'r') as myfile:
                     radarr = myfile.read().replace('\n', '')
                 radarr = json.loads(radarr)
                 for i in radarr:
@@ -504,7 +511,7 @@ async def releasedate(ctx, arg):
 # Function to check release dates. Returns a dict with 'theatrical', 'digital' and 'physical' indexes
 # Uses the TMDb API
 def release_date(imdb):
-    with open(API_PATH+'tmdb.api', 'r') as myfile:
+    with open(API_PATH+TMDB_API, 'r') as myfile:
         tmdb_api = myfile.read().replace('\n', '')
 
     r = requests.get("https://api.themoviedb.org/3/movie/" + imdb + "/release_dates?api_key=" + tmdb_api)
@@ -568,7 +575,7 @@ def release_date(imdb):
 # Discord API key
 disc_api = ""
 
-with open(API_PATH+'discord.api', 'r') as myfile:
+with open(API_PATH+DISCORD_API, 'r') as myfile:
     disc_api = myfile.read().replace('\n', '')
 
 bot.run(disc_api)
