@@ -197,8 +197,6 @@ async def status(ctx):
 async def request(ctx, arg):
     """Request a movie with IMDB URL (TV shows not working)"""
     # Couchpotato API URL. Gets put on watchlist, which is then grabbed by Radarr
-    cp_api = ""
-
     with open(API_PATH+'cp.api', 'r') as myfile:
         cp_api = myfile.read().replace('\n', '')
 
@@ -214,21 +212,43 @@ async def request(ctx, arg):
                 imdb = arg.split('/')[4]
                 imdb_id = imdb[2:]
                 ia = IMDb()
+                msg = ""
                 movie = ia.get_movie(imdb_id)
                 if 'movie' in movie['kind']:
-		    # Send the request
-                    requests.post(url+imdb)
-                    movie_title = movie['title'] + " (" + str(movie['year']) + ")"
+                    # Check if the movie already exists in Radarr
+                    # A crontab is downloading a list of movies every 2 hours using an API call to Radarr
+                    with open(API_PATH+'radarr_list.txt', 'r') as myfile:
+                        radarr = myfile.read().replace('\n', '')
+                    radarr = json.loads(radarr)
+                    for i in radarr:
+                        if 'imdbId' in i:
+                            if i['imdbId'] == imdb:
+                                if str(i['hasFile']) == "True":
+                                    msg = "This movie is already downloaded and is available in Plex."
+                                else:
+                                    msg = "The movie already exists, but is not downloaded yet. It is either not released, or just not available for download"
+                                    dates = release_date(imdb)
+                                    digital_date = dates['digital']
+                                    physical_date = dates['physical']
+                                    if digital_date != "":
+                                        msg += "```Digital Release date:  " + digital_date + "```"
+                                    if physical_date != "":
+                                        msg += "```Physical Release date: " + physical_date + "```"
+                                break
+                    # Send the request
+                    if msg == "":
+                        requests.post(url+imdb)
+                        movie_title = movie['title'] + " (" + str(movie['year']) + ")"
 
-                    dates = release_date(imdb)
-                    digital_date = dates['digital']
-                    physical_date = dates['physical']
+                        dates = release_date(imdb)
+                        digital_date = dates['digital']
+                        physical_date = dates['physical']
 
-                    msg = "Request for " + movie_title + " sent to downloader! It will be notified in <#432847333894389770> when available."
-                    if digital_date != "":
-                        msg += "```Digital Release date:  " + digital_date + "```"
-                    if physical_date != "":
-                        msg += "```Physical Release date: " + physical_date + "```"
+                        msg = "Request for " + movie_title + " sent to downloader! It will be notified in <#432847333894389770> when available."
+                        if digital_date != "":
+                            msg += "```Digital Release date:  " + digital_date + "```"
+                        if physical_date != "":
+                            msg += "```Physical Release date: " + physical_date + "```"
                     await bot.send_message(ctx.message.channel, msg)
                 else:
                     #await bot.send_message(ctx.message.channel, "Not a movie! Requests only works with Movies. <@!205394235522809867> fix manually plz.")
@@ -292,20 +312,44 @@ async def request(ctx, arg):
                 response = int(response.content)-1
                 movie_title = choices[response]['title']
                 imdb_id = choices[response]['imdb_id']
-                # Send the request to Radarr
-                requests.post(url+imdb_id)
 
-                dates = release_date(imdb_id)
-                digital_date = dates['digital']
-                physical_date = dates['physical']
+                # Check if the movie already exists
+                with open(API_PATH+'radarr_list.txt', 'r') as myfile:
+                    radarr = myfile.read().replace('\n', '')
+                radarr = json.loads(radarr)
+                for i in radarr:
+                    if 'imdbId' in i:
+                        if i['imdbId'] == imdb_id:
+                            if str(i['hasFile']) == "True":
+                                msg = "This movie is already downloaded and is available in Plex."
+                            elif str(i['hasFile']) == "False":
+                                msg = "The movie already exists, but is not downloaded yet. It is either not released, or just not available for download"
+                                dates = release_date(imdb_id)
+                                digital_date = dates['digital']
+                                physical_date = dates['physical']
+                                if digital_date != "":
+                                    msg += "```Digital Release date:  " + digital_date + "```"
+                                if physical_date != "":
+                                    msg += "```Physical Release date: " + physical_date + "```"
+                            else:
+                                msg = "Something broke..."
+                            break
+                # Send the request
+                if msg == "":
+                    requests.post(url+imdb_id)
 
-                msg = "Request for " + movie_title + " sent to downloader! It will be notified in <#432847333894389770> when available."
+                    dates = release_date(imdb_id)
+                    digital_date = dates['digital']
+                    physical_date = dates['physical']
 
-                if digital_date != "":
-                    msg += "```Digital Release date:  " + digital_date + "```"
-                if physical_date != "":
-                    msg += "```Physical Release date: " + physical_date + "```"
+                    msg = "Request for " + movie_title + " sent to downloader! It will be notified in <#432847333894389770> when available."
+
+                    if digital_date != "":
+                        msg += "```Digital Release date:  " + digital_date + "```"
+                    if physical_date != "":
+                        msg += "```Physical Release date: " + physical_date + "```"
                 await bot.send_message(ctx.message.channel, msg)
+                msg = ""
 
 @bot.command(pass_context=True)
 async def streams(ctx):

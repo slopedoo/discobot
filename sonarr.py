@@ -6,7 +6,7 @@ import json
 def request(imdb_id):
     sonarr_address = "http://localhost:8989/api/series?apikey="
     with open('sonarr.api', 'r') as myfile:
-            api_key = myfile.read().replace('\n', '')
+        api_key = myfile.read().replace('\n', '')
     PATH = "/home/sigurd/tv5/Series/"
     full_url = sonarr_address + api_key
     json_headers = {'content-type': 'application/json'}
