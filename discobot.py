@@ -214,6 +214,7 @@ async def request(ctx, arg):
                 ia = IMDb()
                 msg = ""
                 movie = ia.get_movie(imdb_id)
+                # If the result is a movie:
                 if 'movie' in movie['kind']:
                     # Check if the movie already exists in Radarr
                     # A crontab is downloading a list of movies every 2 hours using an API call to Radarr
@@ -250,6 +251,7 @@ async def request(ctx, arg):
                         if physical_date != "":
                             msg += "```Physical Release date: " + physical_date + "```"
                     await bot.send_message(ctx.message.channel, msg)
+                # If the result is a TV show:
                 else:
                     #await bot.send_message(ctx.message.channel, "Not a movie! Requests only works with Movies. <@!205394235522809867> fix manually plz.")
                     response = sonarr.request(temp)

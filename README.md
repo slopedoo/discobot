@@ -14,9 +14,9 @@ Plex Discord bot
 
 !status - show status of CPU, memory and disk usage, as well as uptime.
 
-!request - request a movie with an IMDb URL. Only works for movies
+!request - request a movie or TV show, either with an IMDb URL or a search string
 
-!streams - print the amount of currently active streams
+!streams - print the currently active streams
 
 !new - list the most recently added items
 
