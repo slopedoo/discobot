@@ -4,16 +4,23 @@ import json
 #https://realpython.com/python-json/
 
 def request(imdb_id):
-    sonarr_address = "http://localhost:8989/api/series?apikey="
-    with open('sonarr.api', 'r') as myfile:
-        api_key = myfile.read().replace('\n', '')
+    
     PATH = "/home/sigurd/tv5/Series/"
+    API_PATH = "/home/sigurd/tools/discobot/"
+    SONARR_API = "sonarr.api"
+    TVDB_API = 'tvdb_auth.api'
+    SONARR_PORT = '8989'
+    HOST = 'localhost'
+
+    sonarr_address = "http://" + HOST + ":" + SONARR_PORT + "/api/series?apikey="
+    with open(API_PATH+SONARR_API, 'r') as myfile:
+        api_key = myfile.read().replace('\n', '')
     full_url = sonarr_address + api_key
     json_headers = {'content-type': 'application/json'}
 
     # tvdb needs an auth token in the request header
 
-    auth_list = open('tvdb_auth.api').read().splitlines()
+    auth_list = open(API_PATH+TVDB_API).read().splitlines()
     auth_string = {
         "apikey": auth_list[0],
         "userkey": auth_list[1],

@@ -198,6 +198,7 @@ async def status(ctx):
         total_tv += psutil.disk_usage(p)[0]
         used_tv += psutil.disk_usage(p)[1]
 
+    # Gets total and used disk size in terabyte
     total_mov = round(total_mov / 1000000000000,1)
     used_mov = round(used_mov / 1000000000000,1)
     mov_pct = round(used_mov / total_mov*100,1)
@@ -579,8 +580,6 @@ def release_date(imdb):
 
 
 # Discord API key
-disc_api = ""
-
 with open(API_PATH+DISCORD_API, 'r') as myfile:
     disc_api = myfile.read().replace('\n', '')
 
