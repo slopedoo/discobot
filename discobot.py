@@ -27,7 +27,7 @@ RADARR_API = "radarr.api"
 DISCORD_API = "discord.api"
 TMDB_API = "tmdb.api"
 
-# A list of all Radarr movies in Json format. Downloaded through the Radarr API (wget http://localhost:7878/api/movie?apikey=XXXXXXXXXXXXXX) by something like crontab
+# A list of all Radarr movies in Json format. Updated through the Radarr API (wget http://localhost:7878/api/movie?apikey=XXXXXXX) with something like crontab
 RADARR_MOVIE_LIST = "radarr_list.txt"
 
 # Host address and port numbers
@@ -37,7 +37,7 @@ COUCHPOTATO_PORT = "5050"
 
 # Plex URL is typically app.plex.tv/desktop#!/server/<your identifier>/details. This url is used for linking to entries in the library
 #PLEX_URL = "https://app.plex.tv/desktop#!/server/840fd4be6d4142952abf5182e8dc1cc4bfae60db/details"
-PLEX_URL = "http://plex.nerud.no"
+PLEX_URL = "http://plex.bjornerud.eu"
 
 # Path to media folders. My mountpoints are named mov1, mov2, tv1, tv2 etc. so the disk usage function will filter based on "mov" and "tv"
 MOV_PATH = "/home/sigurd/mov"
@@ -106,17 +106,15 @@ async def library(ctx):
     movies = a['response']['data'][0]['count']
     music = a['response']['data'][1]['count']
     tv = a['response']['data'][2]['count']
-    await bot.send_message(ctx.message.channel, "Library statistics:\n```Movies:   " + movies + " films.\n" +
-            "TV Shows: " + tv + " shows.\n" + "Artists:  " + music + "```")
+    await bot.send_message(ctx.message.channel, "Library statistics:\n```Movies:   " + movies + "\n" +
+            "TV Shows: " + tv + "\n" + "Artists:  " + music + "```")
 
 @bot.command(pass_context=True)
 async def search(ctx, *, text):
     """Search for content on the Plex server. I.e. !search Toy Story"""
     r = requests.get(ppurl+"search"+"&query="+text)
     a = r.json()
-    tv = ""
-    movies = ""
-    music = ""
+    tv = movies = music = ""
     url = PLEX_URL + "?key=/library/metadata/"
     url2 = ""
     # Categorize search results
@@ -125,28 +123,20 @@ async def search(ctx, *, text):
             for r in a['response']['data']['results_list']['show']:
                 # Make full URL to the Plex item
                 url2 = url + r['rating_key']
-                #shortener = Shortener('Tinyurl')
-                # A bit of formatting
                 full_title = "`" + str(r['full_title'])
-                full_title += " "*(45-len(full_title)) + "|` "
-                # Print title + shortened URL
-                #tv += "\n" + full_title + "{}".format(shortener.short(url2))
+                full_title += " "*(45-len(full_title)) + " |` "
                 tv += "\n" + full_title + "{}".format(url2)
         if i == 'movie':
             for r in a['response']['data']['results_list']['movie']:
                 url2 = url + r['rating_key']
-                #shortener = Shortener('Tinyurl')
                 full_title = "`" + str(r['full_title']) + " (" + str(r['year']) + ")"
-                full_title += " "*(45-len(full_title)) + "|` "
-                #movies += "\n" + full_title + "{}".format(shortener.short(url2))
+                full_title += " "*(45-len(full_title)) + " |` "
                 movies += "\n" + full_title + "{}".format(url2)
         if i == 'artist':
             for r in a['response']['data']['results_list']['artist']:
                 url2 = url + r['rating_key']
-                #shortener = Shortener('Tinyurl')
                 full_title = "`" + str(r['full_title'])
-                full_title += " "*(45-len(full_title)) + "|` "
-                #music += "\n" + full_title + "{}".format(shortener.short(url2))
+                full_title += " "*(45-len(full_title)) + " |` "
                 music += "\n" + full_title + "{}".format(url2)
 
     # Only print categories where we have results
@@ -295,7 +285,6 @@ async def request(ctx, arg):
                     break
                 choices.append({'title' : i['long imdb title'] , 'imdb_url' : "<https://www.imdb.com/title/tt" + i.movieID + ">" , 'imdb_id' : "tt"+i.movieID})
                 c += 1
-
         msg = ""
         c = 1
 
@@ -351,19 +340,15 @@ async def request(ctx, arg):
                 # Send the request
                 if msg == "":
                     requests.post(url+imdb_id)
-
                     dates = release_date(imdb_id)
                     digital_date = dates['digital']
                     physical_date = dates['physical']
-
                     msg = "Request for " + movie_title + " sent to downloader! It will be notified in <#432847333894389770> when available."
-
                     if digital_date != "":
                         msg += "```Digital Release date:  " + digital_date + "```"
                     if physical_date != "":
                         msg += "```Physical Release date: " + physical_date + "```"
                 await bot.send_message(ctx.message.channel, msg)
-                msg = ""
 
 @bot.command(pass_context=True)
 async def streams(ctx):
