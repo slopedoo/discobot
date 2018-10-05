@@ -36,7 +36,6 @@ TAUTULLI_PORT = "8181"
 COUCHPOTATO_PORT = "5050"
 
 # Plex URL is typically app.plex.tv/desktop#!/server/<your identifier>/details. This url is used for linking to entries in the library
-#PLEX_URL = "https://app.plex.tv/desktop#!/server/840fd4be6d4142952abf5182e8dc1cc4bfae60db/details"
 PLEX_URL = "http://plex.bjornerud.eu"
 
 # Path to media folders. My mountpoints are named mov1, mov2, tv1, tv2 etc. so the disk usage function will filter based on "mov" and "tv"
@@ -63,19 +62,16 @@ async def toptv(ctx):
     """Prints a list over the most played TV shows the last month"""
     r = requests.get(ppurl+"get_home_stats")
     a = r.json()
-    c = 0
-    r = c+1
+    r = 1
     msg = ""
 
     for i in a['response']['data'][0]['rows']:
-        o = a['response']['data'][0]['rows'][c]['title']
-        p = a['response']['data'][0]['rows'][c]['total_plays']
-        o = str(r) + ". " + o
-        msg = msg + "{:45s}".format(o) + "Total plays: " + "{:>4s}".format(str(p)) + "\n"
-        c = c + 1
-        r = c + 1
-        if c == 10:
+        title = i['title']
+        plays = i['total_plays']
+        msg += "{:45s}".format(str(r) + ". " + title) + "Total plays: " + "{:>4s}".format(str(plays)) + "\n"
+        if r == 10:
             break
+        r += 1
     await bot.send_message(ctx.message.channel, ":tv: Top TV Shows the last month: :tv: ```"+msg+"```")
 
 @bot.command(pass_context=True)
@@ -83,18 +79,17 @@ async def topmovie(ctx):
     """Prints a list over the most played movies the last month"""
     r = requests.get(ppurl+"get_home_stats")
     a = r.json()
-    c = 0
-    r = c+1
+    r = 1
     msg = ""
+
     for i in a['response']['data'][2]['rows']:
-        o = a['response']['data'][2]['rows'][c]['title']
-        p = a['response']['data'][2]['rows'][c]['total_plays']
-        o = str(r) + ". " + o
-        msg = msg + "{:45s}".format(o) + "Total plays: " + "{:>4s}".format(str(p)) + "\n"
-        c = c + 1
-        r = c + 1
-        if c == 10:
+        title = i['title']
+        plays = i['total_plays']
+        msg += "{:45s}".format(str(r) + ". " + title) + "Total plays: " + "{:>4s}".format(str(plays)) + "\n"
+        if r == 10:
             break
+        r += 1
+
     await bot.send_message(ctx.message.channel, ":film_frames: Top movies the last month: :film_frames: ```"+msg+"```")
 
 @bot.command(pass_context=True)
@@ -102,7 +97,6 @@ async def library(ctx):
     """Prints movie/TV show/artist count"""
     r = requests.get(ppurl+"get_libraries")
     a = r.json()
-    c = 0
     movies = a['response']['data'][0]['count']
     music = a['response']['data'][1]['count']
     tv = a['response']['data'][2]['count']
@@ -267,7 +261,7 @@ async def request(ctx, arg):
                         msg = "Something went horribly wrong..."
                     await bot.send_message(ctx.message.channel, msg)
             else:
-                await bot.send_message(ctx.message.channel, "Not a valid IMDB URL! It needs to https://www.imdb.com/title/")
+                await bot.send_message(ctx.message.channel, "Not a valid IMDB URL! It should look like this: https://www.imdb.com/title/tt123456")
         else:
             await bot.send_message(ctx.message.channel, "Not a valid IMDB URL!")
     else:
