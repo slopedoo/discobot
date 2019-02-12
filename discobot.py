@@ -31,7 +31,7 @@ TMDB_API = "tmdb.api"
 RADARR_MOVIE_LIST = "radarr_list.txt"
 
 # Host address and port numbers
-HOST = "localhost"
+HOST = "10.0.0.2"
 TAUTULLI_PORT = "8181"
 COUCHPOTATO_PORT = "5050"
 
@@ -366,6 +366,29 @@ async def streams(ctx):
         await bot.send_message(ctx.message.channel, "Current streams: ```" + msg + "```")
     else:
         await bot.send_message(ctx.message.channel, "No streams currently playing.")
+
+@bot.command(pass_context=True)
+async def specs(ctx):
+    """Show system specs"""
+    partitions = psutil.disk_partitions()
+    disks = []
+    total_disks = used_disks = 0
+    for p in partitions:
+    	disks.append(p.mountpoint)
+
+    for p in disks:
+        total_disks += psutil.disk_usage(p)[0]
+        used_disks += psutil.disk_usage(p)[1]
+
+    # Gets total and used disk size in terabyte
+    total_disks = round(total_disks / 1000000000000,1)
+    used_disks = round(used_disks / 1000000000000,1)
+    disks_pct = round(used_disks / total_disks*100,1)
+
+    msg = "```CPU:    2x Intel Xeon CPU E5-2620 @ 2.00GHz, 12 cores 24 threads\n"
+    msg +="Memory: 16GB DDR3 1600 MHz\n"
+    msg +="Disks:  " + str(used_disks) + " TB / " + str(total_disks) + " TB (" + str(disks_pct) + "% used)```"
+    await bot.send_message(ctx.message.channel, msg)
 
 @bot.command(pass_context=True)
 async def new(ctx):

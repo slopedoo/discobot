@@ -11,7 +11,7 @@ def request(imdb_id):
     SONARR_API = "sonarr.api"
     TVDB_API = "tvdb_auth.api"
     SONARR_PORT = "8989"
-    HOST = "localhost"
+    HOST = "10.0.0.2"
 
     sonarr_address = "http://" + HOST + ":" + SONARR_PORT + "/api/series?apikey="
     with open(API_PATH+SONARR_API, 'r') as myfile:
