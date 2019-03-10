@@ -26,6 +26,8 @@ COUCHPOTATO_API = "cp.api"
 RADARR_API = "radarr.api"
 DISCORD_API = "discord.api"
 TMDB_API = "tmdb.api"
+OMBI_API = "ombi.api"
+TVDB_API = "tvdb_auth.api"
 
 # A list of all Radarr movies in Json format. Updated through the Radarr API (wget http://localhost:7878/api/movie?apikey=XXXXXXX) with something like crontab
 RADARR_MOVIE_LIST = "radarr_list.txt"
@@ -234,31 +236,56 @@ async def request(ctx, arg):
                                 break
                     # Send the request
                     if msg == "":
-                        requests.post(url+imdb)
-                        movie_title = movie['title'] + " (" + str(movie['year']) + ")"
+                        with open(API_PATH+TMDB_API, 'r') as myfile:
+                            tmdb_api = myfile.read().replace('\n', '')
+                        with open(API_PATH+OMBI_API, 'r') as myfile:
+                            ombi_api = myfile.read().replace('\n', '')
+                        r = requests.get("https://api.themoviedb.org/3/movie/"+temp+"/release_dates?api_key="+tmdb_api)
+                        tmdbid = r.json()['id']
 
-                        dates = release_date(imdb)
-                        digital_date = dates['digital']
-                        physical_date = dates['physical']
-
-                        msg = "Request for " + movie_title + " sent to downloader! It will be notified in <#432847333894389770> when available."
-                        if digital_date != "":
-                            msg += "```Digital Release date:  " + digital_date + "```"
-                        if physical_date != "":
-                            msg += "```Physical Release date: " + physical_date + "```"
+                        headers = {"Apikey" : ombi_api}
+                        payload = {"theMovieDbId" : tmdbid}
+                        r = requests.post("http://10.0.0.2:19999/ombi/api/v1/request/movie", json=payload, headers=headers)
+                        if r.json()['message'] == None:
+                            # Request failed
+                            msg = (r.json()['errorMessage'])
+                        elif r.json()['errorMessage'] == None:
+                            # Request succeeded
+                            msg = (r.json()['message'])
                     await bot.send_message(ctx.message.channel, msg)
                 # If the result is a TV show:
                 else:
-                    #await bot.send_message(ctx.message.channel, "Not a movie! Requests only works with Movies. <@!205394235522809867> fix manually plz.")
-                    response = sonarr.request(imdb)
-                    print(response['status_code'])
-                    if response['successful'] == "true":
-                        msg = "Request for " + response['name'] + " sent to downloader! It will be notified in <#432847333894389770> when available."
-                    elif response['successful'] == "false":
-                        msg = "Something went wrong with your request. The TV show already exists or something else broke.\n"
-                        msg += "```ErrorMsg: " + str(response['status_code']) + " - " + response['error_message'] + "```"
-                    else:
-                        msg = "Something went horribly wrong..."
+                    json_headers = {'content-type': 'application/json'}
+                    # Tvdb needs an auth token in the request header
+                    auth_list = open(API_PATH+TVDB_API).read().splitlines()
+                    auth_string = {
+                        "apikey": auth_list[0],
+                        "userkey": auth_list[1],
+                        "username": auth_list[2]
+                    }
+                    # Get auth token from the auth_string
+                    auth = requests.post("https://api.thetvdb.com/login", json=auth_string, headers=json_headers)
+                    auth_token = json.loads(auth.text)
+                    auth_token = auth_token['token']
+
+                    # Append the token to the json_header
+                    auth_header = {'Authorization' : 'Bearer '+auth_token}
+                    json_headers.update(auth_header)
+
+                    # Get TVDB ID by IMDb ID
+                    get_url = "https://api.thetvdb.com/search/series?imdbId=" + "tt"+imdb_id
+                    get_series = requests.get(get_url, headers=json_headers)
+                    tvdb_id = get_series.json()['data'][0]['id']
+
+                    headers = {"Apikey" : "51be9839f84a4f50936a94e597f8bf32"}
+                    payload = {"tvdbid" : tvdb_id}
+                    r = requests.post("http://10.0.0.2:19999/ombi/api/v1/request/tv", json=payload, headers=headers)
+                    if r.json()['message'] == None:
+                        # Request failed
+                        msg = (r.json()['errorMessage'])
+                    elif r.json()['errorMessage'] == None:
+                        # Request succeeded
+                        msg = (r.json()['message'])
                     await bot.send_message(ctx.message.channel, msg)
             else:
                 await bot.send_message(ctx.message.channel, "Not a valid IMDB URL! It should look like this: https://www.imdb.com/title/tt123456")
@@ -333,16 +360,69 @@ async def request(ctx, arg):
                             break
                 # Send the request
                 if msg == "":
-                    requests.post(url+imdb_id)
-                    dates = release_date(imdb_id)
-                    digital_date = dates['digital']
-                    physical_date = dates['physical']
-                    msg = "Request for " + movie_title + " sent to downloader! It will be notified in <#432847333894389770> when available."
-                    if digital_date != "":
-                        msg += "```Digital Release date:  " + digital_date + "```"
-                    if physical_date != "":
-                        msg += "```Physical Release date: " + physical_date + "```"
+                    imdb_id = "tt"+imdb_id
+                    with open(API_PATH+TMDB_API, 'r') as myfile:
+                        tmdb_api = myfile.read().replace('\n', '')
+                    with open(API_PATH+OMBI_API, 'r') as myfile:
+                        ombi_api = myfile.read().replace('\n', '')
+                    r = requests.get("https://api.themoviedb.org/3/movie/"+imdb_id+"/release_dates?api_key="+tmdb_api)
+                    tmdbid = r.json()['id']
+
+                    headers = {"Apikey" : ombi_api}
+                    payload = {"theMovieDbId" : tmdbid}
+                    r = requests.post("http://10.0.0.2:19999/ombi/api/v1/request/movie", json=payload, headers=headers)
+                    print(r.json())
+                    if r.json()['message'] == None:
+                        # Request failed
+                        msg = (r.json()['errorMessage'])
+                    elif r.json()['errorMessage'] == None:
+                        # Request succeeded
+                        msg = (r.json()['message'])
                 await bot.send_message(ctx.message.channel, msg)
+
+@bot.command(pass_context=True)
+async def requested(ctx):
+    """Check pending requests"""
+    with open(API_PATH+OMBI_API, 'r') as myfile:
+        ombi_api = myfile.read().replace('\n', '')
+    headers = {"Apikey" : ombi_api}
+    rmov = requests.get("http://10.0.0.2:19999/ombi/api/v1/request/movie", headers=headers)
+    rtv = requests.get("http://10.0.0.2:19999/ombi/api/v1/request/tv", headers=headers)
+
+    msg = "\nPending Movie Requests:\n"
+    msg += "```"
+    msg += "{:30}".format("Title")
+    msg += "{:30}".format("Requested Date")
+    msg += "{:30}".format("Release Date")
+    msg += "\n"
+
+    for i in rmov.json():
+        if i['markedAsAvailable'] == None:
+            msg += "{:30}".format(i['title'])
+            msg += "{:30}".format(i['requestedDate'][:10])
+            msg += "{:30}".format(i['releaseDate'][:10])
+            msg += "\n"
+
+    msg += "```\n"
+    msg += "Pending TV Requests:\n"
+    msg += "```"
+    msg += "{:30}".format("Title")
+    msg += "{:30}".format("Requested Date")
+    msg += "{:30}".format("Release Date")
+    msg += "\n"
+
+    for i in rtv.json():
+        y = i['childRequests'][0]
+        if y['markedAsAvailable'] == None:
+            msg += "{:30}".format(y['title'])
+            msg += "{:30}".format(y['requestedDate'][:10])
+            msg += "{:30}".format(i['releaseDate'][:10])
+            msg += "\n"
+    
+    msg += "```"
+
+    await bot.send_message(ctx.message.channel, msg)
+
 
 @bot.command(pass_context=True)
 async def streams(ctx):
