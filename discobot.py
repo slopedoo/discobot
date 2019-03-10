@@ -5,7 +5,6 @@
 
 # -*- coding: utf-8 -*-
 import discord
-import sonarr
 from discord.ext.commands import Bot
 from discord.ext import commands
 from uptime import uptime
@@ -35,7 +34,7 @@ RADARR_MOVIE_LIST = "radarr_list.txt"
 # Host address and port numbers
 HOST = "10.0.0.2"
 TAUTULLI_PORT = "8181"
-COUCHPOTATO_PORT = "5050"
+OMBI_PORT = "19999"
 
 # Plex URL is typically app.plex.tv/desktop#!/server/<your identifier>/details. This url is used for linking to entries in the library
 PLEX_URL = "http://plex.bjornerud.eu"
@@ -53,7 +52,7 @@ bot = commands.Bot(command_prefix = PREFIX)
 with open(API_PATH+TAUTULLI_API, 'r') as myfile:
     pp_apikey = myfile.read().replace('\n', '')
 
-ppurl = "http://" + HOST + ":" + TAUTULLI_PORT + "/api/v2?apikey=" + pp_apikey + "&cmd="
+ppurl = "http://" + HOST + ":" + TAUTULLI_PORT + "/tautulli/api/v2?apikey=" + pp_apikey + "&cmd="
 
 @bot.event
 async def on_ready():
@@ -245,7 +244,7 @@ async def request(ctx, arg):
 
                         headers = {"Apikey" : ombi_api}
                         payload = {"theMovieDbId" : tmdbid}
-                        r = requests.post("http://10.0.0.2:19999/ombi/api/v1/request/movie", json=payload, headers=headers)
+                        r = requests.post("http://" + HOST + ":" + OMBI_PORT + "/ombi/api/v1/request/movie", json=payload, headers=headers)
                         if r.json()['message'] == None:
                             # Request failed
                             msg = (r.json()['errorMessage'])
@@ -279,7 +278,7 @@ async def request(ctx, arg):
 
                     headers = {"Apikey" : "51be9839f84a4f50936a94e597f8bf32"}
                     payload = {"tvdbid" : tvdb_id}
-                    r = requests.post("http://10.0.0.2:19999/ombi/api/v1/request/tv", json=payload, headers=headers)
+                    r = requests.post("http://" + HOST + ":" + OMBI_PORT + "/ombi/api/v1/request/tv", json=payload, headers=headers)
                     if r.json()['message'] == None:
                         # Request failed
                         msg = (r.json()['errorMessage'])
@@ -386,8 +385,8 @@ async def requested(ctx):
     with open(API_PATH+OMBI_API, 'r') as myfile:
         ombi_api = myfile.read().replace('\n', '')
     headers = {"Apikey" : ombi_api}
-    rmov = requests.get("http://10.0.0.2:19999/ombi/api/v1/request/movie", headers=headers)
-    rtv = requests.get("http://10.0.0.2:19999/ombi/api/v1/request/tv", headers=headers)
+    rmov = requests.get("http://" + HOST + ":" + OMBI_PORT + "/ombi/api/v1/request/movie", headers=headers)
+    rtv = requests.get("http://" + HOST + ":" + OMBI_PORT + "/ombi/api/v1/request/tv", headers=headers)
 
     msg = "\nPending Movie Requests:\n"
     msg += "```"
