@@ -16,6 +16,7 @@ import asyncio, time, requests, json, psutil, os
 #logging.basicConfig()
 
 PREFIX = "!"
+NETWORK_INTERFACE = "em1"
 
 # Path to API files
 API_PATH = "/home/sigurd/tools/discobot/"
@@ -187,8 +188,8 @@ async def status(ctx):
     tv_pct = round(used_tv / total_tv*100, 1)
 
     # Get current network usage
-    tx = subprocess.check_output("vnstat -i em1 -tr 2 | grep tx | awk '{print $2 \" \" $3}'", shell=True)
-    rx = subprocess.check_output("vnstat -i em1 -tr 2 | grep rx | awk '{print $2 \" \" $3}'", shell=True)
+    tx = subprocess.check_output("vnstat -i "+NETWORK_INTERFACE+" -tr 2 | grep tx | awk '{print $2 \" \" $3}'", shell=True)
+    rx = subprocess.check_output("vnstat -i "+NETWORK_INTERFACE+" -tr 2 | grep rx | awk '{print $2 \" \" $3}'", shell=True)
     tx = tx.decode('ascii').strip()
     rx = rx.decode('ascii').strip()
 
