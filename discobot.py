@@ -158,8 +158,8 @@ async def status(ctx):
     memoryUse = memoryTot - int(mem[1]/1000000)
     temp = psutil.sensors_temperatures()['coretemp'][0][1]
 
-    total = subprocess.check_output("df | grep mov | awk '{print $2}'", shell=True).decode('ascii').splitlines()
-    used = subprocess.check_output("df | grep mov | awk '{print $3}'", shell=True).decode('ascii').splitlines()
+    total = subprocess.check_output("df | grep "+MOV_PATH+" | awk '{print $2}'", shell=True).decode('ascii').splitlines()
+    used = subprocess.check_output("df | grep "+MOV_PATH+" | awk '{print $3}'", shell=True).decode('ascii').splitlines()
     total_mov = used_mov = 0
 
     for i in total:
@@ -172,8 +172,8 @@ async def status(ctx):
     used_mov = round(used_mov / 1000000000, 1)
     mov_pct = round(used_mov / total_mov*100, 1)
 
-    total = subprocess.check_output("df | grep tv | awk '{print $2}'", shell=True).decode('ascii').splitlines()
-    used = subprocess.check_output("df | grep tv | awk '{print $3}'", shell=True).decode('ascii').splitlines()
+    total = subprocess.check_output("df | grep "+TV_PATH+" | awk '{print $2}'", shell=True).decode('ascii').splitlines()
+    used = subprocess.check_output("df | grep "+TV_PATH+" | awk '{print $3}'", shell=True).decode('ascii').splitlines()
     total_tv = used_tv = 0
 
     for i in total:
