@@ -5,6 +5,7 @@
 
 # -*- coding: utf-8 -*-
 import discord
+import subprocess
 from discord.ext.commands import Bot
 from discord.ext import commands
 from uptime import uptime
@@ -21,7 +22,6 @@ API_PATH = "/home/sigurd/tools/discobot/"
 
 # Name of the API files. They should only contain the API key of the service and nothing else
 TAUTULLI_API = "pp.api"
-COUCHPOTATO_API = "cp.api"
 RADARR_API = "radarr.api"
 DISCORD_API = "discord.api"
 TMDB_API = "tmdb.api"
@@ -158,34 +158,42 @@ async def status(ctx):
     memoryUse = memoryTot - int(mem[1]/1000000)
     temp = psutil.sensors_temperatures()['coretemp'][0][1]
 
-    partitions = psutil.disk_partitions()
-    mov = []
-    tv = []
-    total_mov = used_mov = total_tv = used_tv = 0
+    total = subprocess.check_output("df | grep mov | awk '{print $2}'", shell=True).decode('ascii').splitlines()
+    used = subprocess.check_output("df | grep mov | awk '{print $3}'", shell=True).decode('ascii').splitlines()
+    total_mov = used_mov = 0
 
-    for p in partitions:
-        if MOV_PATH in p.mountpoint:
-            mov.append(p.mountpoint)
-        if TV_PATH in p.mountpoint:
-            tv.append(p.mountpoint)
+    for i in total:
+        total_mov += int(i)
 
-    for p in mov:
-        total_mov += psutil.disk_usage(p)[0]
-        used_mov += psutil.disk_usage(p)[1]
+    for i in used:
+        used_mov += int(i)
 
-    for p in tv:
-        total_tv += psutil.disk_usage(p)[0]
-        used_tv += psutil.disk_usage(p)[1]
+    total_mov = round(total_mov / 1000000000, 1)
+    used_mov = round(used_mov / 1000000000, 1)
+    mov_pct = round(used_mov / total_mov*100, 1)
 
-    # Gets total and used disk size in terabyte
-    total_mov = round(total_mov / 1000000000000,1)
-    used_mov = round(used_mov / 1000000000000,1)
-    mov_pct = round(used_mov / total_mov*100,1)
-    total_tv = round(total_tv / 1000000000000,1)
-    used_tv = round(used_tv / 1000000000000,1)
-    tv_pct = round(used_tv / total_tv*100,1)
-    msg = "System Status:\n```Uptime:    " + str(up) + " days\nCPU usage: " + str(cpu) + "%\n"
-    msg += "Memory:    " + str(memoryUse) + "KB / " + str(memoryTot) + "KB\nTemp:      " + str(temp) + "°\n\n"
+    total = subprocess.check_output("df | grep tv | awk '{print $2}'", shell=True).decode('ascii').splitlines()
+    used = subprocess.check_output("df | grep tv | awk '{print $3}'", shell=True).decode('ascii').splitlines()
+    total_tv = used_tv = 0
+
+    for i in total:
+        total_tv += int(i)
+
+    for i in used:
+        used_tv += int(i)
+
+    total_tv = round(total_tv / 1000000000, 1)
+    used_tv = round(used_tv / 1000000000, 1)
+    tv_pct = round(used_tv / total_tv*100, 1)
+
+    # Get current network usage
+    tx = subprocess.check_output("vnstat -i em1 -tr 2 | grep tx | awk '{print $2 \" \" $3}'", shell=True)
+    rx = subprocess.check_output("vnstat -i em1 -tr 2 | grep rx | awk '{print $2 \" \" $3}'", shell=True)
+    tx = tx.decode('ascii').strip()
+    rx = rx.decode('ascii').strip()
+
+    msg = "System Status:\n```Uptime:      " + str(up) + " days\nCPU usage:   " + str(cpu) + "%\n"
+    msg += "Memory:      " + str(memoryUse) + "KB / " + str(memoryTot) + "KB\nTemp:        " + str(temp) + "°\n\nOut traffic: " + tx + "\nIn traffic:  " + rx + "\n\n"
     msg += "Movies:    " + str(used_mov) + " TB / " + str(total_mov) + " TB (" + str(mov_pct) + "% used)\n"
     msg += "TV Shows:  " + str(used_tv) + " TB / " + str(total_tv) + " TB (" + str(tv_pct) + "% used)```"
     await bot.send_message(ctx.message.channel, msg)
@@ -193,11 +201,6 @@ async def status(ctx):
 @bot.command(pass_context=True)
 async def request(ctx, arg):
     """Request a movie with IMDB URL (TV shows not working)"""
-    # Couchpotato API URL. Gets put on watchlist, which is then grabbed by Radarr
-    with open(API_PATH+COUCHPOTATO_API, 'r') as myfile:
-        cp_api = myfile.read().replace('\n', '')
-
-    url = "http://" + HOST +":" + COUCHPOTATO_PORT + "/api/" + cp_api + "/movie.add?identifier="
     imdb = ""
     # Make sure it's a valid URL
     if arg.startswith('http'):
@@ -417,7 +420,7 @@ async def requested(ctx):
             msg += "{:30}".format(y['requestedDate'][:10])
             msg += "{:30}".format(i['releaseDate'][:10])
             msg += "\n"
-    
+
     msg += "```"
 
     await bot.send_message(ctx.message.channel, msg)
