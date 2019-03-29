@@ -331,6 +331,7 @@ async def request(ctx, arg):
             response = await bot.wait_for_message(author=ctx.message.author,timeout=30)
 
             if response != None:
+                msg = ""
                 # Check that the response is within the range of options
                 if int(response.content) > len(choices):
                     await bot.send_message(ctx.message.channel, "Not a valid option.")
@@ -363,7 +364,6 @@ async def request(ctx, arg):
                             break
                 # Send the request
                 if msg == "":
-                    imdb_id = "tt"+imdb_id
                     with open(API_PATH+TMDB_API, 'r') as myfile:
                         tmdb_api = myfile.read().replace('\n', '')
                     with open(API_PATH+OMBI_API, 'r') as myfile:
@@ -373,7 +373,7 @@ async def request(ctx, arg):
 
                     headers = {"Apikey" : ombi_api}
                     payload = {"theMovieDbId" : tmdbid}
-                    r = requests.post("http://10.0.0.2:19999/ombi/api/v1/request/movie", json=payload, headers=headers)
+                    r = requests.post("http://" + HOST + ":" + OMBI_PORT + "/ombi/api/v1/request/movie", json=payload, headers=headers)
                     print(r.json())
                     if r.json()['message'] == None:
                         # Request failed
