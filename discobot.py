@@ -30,6 +30,7 @@ OMBI_API = "ombi.api"
 TVDB_API = "tvdb_auth.api"
 
 # A list of all Radarr movies in Json format. Updated through the Radarr API (wget http://localhost:7878/api/movie?apikey=XXXXXXX) with something like crontab
+# 00 */2 * * * wget -q http://10.0.0.2:7878/api/movie?apikey=XXXXXXXXXXXXXXXXXXXXX -O /discobot/radarr_list.txt
 RADARR_MOVIE_LIST = "radarr_list.txt"
 
 # Host address and port numbers
@@ -41,8 +42,8 @@ OMBI_PORT = "19999"
 PLEX_URL = "http://plex.bjornerud.eu"
 
 # Path to media folders. My mountpoints are named mov1, mov2, tv1, tv2 etc. so the disk usage function will filter based on "mov" and "tv"
-MOV_PATH = "/home/sigurd/mov"
-TV_PATH = "/home/sigurd/tv"
+MOV_PATH = "/mnt/mov"
+TV_PATH = "/mnt/tv"
 
 ##################################################################################################################################################################
 ##################################################################################################################################################################
@@ -266,6 +267,8 @@ async def request(ctx, arg):
                         "userkey": auth_list[1],
                         "username": auth_list[2]
                     }
+                    with open(API_PATH+OMBI_API, 'r') as myfile:
+                        ombi_api = myfile.read().replace('\n', '')
                     # Get auth token from the auth_string
                     auth = requests.post("https://api.thetvdb.com/login", json=auth_string, headers=json_headers)
                     auth_token = json.loads(auth.text)
@@ -280,7 +283,7 @@ async def request(ctx, arg):
                     get_series = requests.get(get_url, headers=json_headers)
                     tvdb_id = get_series.json()['data'][0]['id']
 
-                    headers = {"Apikey" : "51be9839f84a4f50936a94e597f8bf32"}
+                    headers = {"Apikey" : ombi_api}
                     payload = {"tvdbid" : tvdb_id}
                     r = requests.post("http://" + HOST + ":" + OMBI_PORT + "/ombi/api/v1/request/tv", json=payload, headers=headers)
                     if r.json()['message'] == None:
