@@ -16,7 +16,7 @@ import asyncio, time, requests, json, psutil, os
 #logging.basicConfig()
 
 PREFIX = "!"
-NETWORK_INTERFACE = "em1"
+NETWORK_INTERFACE = "enp3s0"
 
 # Path to API files
 API_PATH = "/home/sigurd/tools/discobot/"
@@ -101,10 +101,9 @@ async def library(ctx):
     r = requests.get(ppurl+"get_libraries")
     a = r.json()
     movies = a['response']['data'][0]['count']
-    music = a['response']['data'][1]['count']
-    tv = a['response']['data'][2]['count']
+    tv = a['response']['data'][1]['count']
     await bot.send_message(ctx.message.channel, "Library statistics:\n```Movies:   " + movies + "\n" +
-            "TV Shows: " + tv + "\n" + "Artists:  " + music + "```")
+            "TV Shows: " + tv + "```")
 
 @bot.command(pass_context=True)
 async def search(ctx, *, text):
