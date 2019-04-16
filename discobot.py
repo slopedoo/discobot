@@ -228,7 +228,7 @@ async def request(ctx, arg):
                                 if str(i['hasFile']) == "True":
                                     msg = "This movie is already downloaded and is available in Plex."
                                 else:
-                                    msg = "The movie already exists, but is not downloaded yet. It is either not released, or just not available for download"
+                                    msg = "The movie already exists, but is not downloaded yet. It is either not released, or just not available for download. You can check pending requests with the `!requested` command."
                                     dates = release_date(imdb)
                                     digital_date = dates['digital']
                                     physical_date = dates['physical']
@@ -353,7 +353,7 @@ async def request(ctx, arg):
                             if str(i['hasFile']) == "True":
                                 msg = "This movie is already downloaded and is available in Plex."
                             elif str(i['hasFile']) == "False":
-                                msg = "The movie already exists, but is not downloaded yet. It is either not released, or just not available for download"
+                                msg = "The movie already exists, but is not downloaded yet. It is either not released, or just not available for download. You can check pending requests with the `!requested` command."
                                 dates = release_date(imdb_id)
                                 digital_date = dates['digital']
                                 physical_date = dates['physical']
@@ -455,20 +455,19 @@ async def streams(ctx):
 @bot.command(pass_context=True)
 async def specs(ctx):
     """Show system specs"""
-    partitions = psutil.disk_partitions()
-    disks = []
+    total = subprocess.check_output("df | grep -E '"+TV_PATH+"|"+MOV_PATH+"' | awk '{print $2}'", shell=True).decode('ascii').splitlines()
+    used = subprocess.check_output("df | grep -E '"+TV_PATH+"|"+MOV_PATH+"' | awk '{print $3}'", shell=True).decode('ascii').splitlines()
     total_disks = used_disks = 0
-    for p in partitions:
-    	disks.append(p.mountpoint)
 
-    for p in disks:
-        total_disks += psutil.disk_usage(p)[0]
-        used_disks += psutil.disk_usage(p)[1]
+    for i in total:
+        total_disks += int(i)
 
-    # Gets total and used disk size in terabyte
-    total_disks = round(total_disks / 1000000000000,1)
-    used_disks = round(used_disks / 1000000000000,1)
-    disks_pct = round(used_disks / total_disks*100,1)
+    for i in used:
+        used_disks += int(i)
+
+    total_disks = round(total_disks / 1000000000, 1)
+    used_disks = round(used_disks / 1000000000, 1)
+    disks_pct = round(used_disks / total_disks*100, 1)
 
     msg = "```CPU:    2x Intel Xeon CPU E5-2620 @ 2.00GHz, 12 cores 24 threads\n"
     msg +="Memory: 16GB DDR3 1600 MHz\n"
