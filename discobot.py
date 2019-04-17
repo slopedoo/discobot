@@ -1,7 +1,7 @@
 ## Written by Actar/Slopedoo
 ##
 ## Discord Bot for Plex to help with automation and self-servicing for users
-## Requires: discord, uptime, imdb
+## Requires: discord, uptime, imdbpy, psutil, uptime
 
 # -*- coding: utf-8 -*-
 import discord
@@ -228,7 +228,7 @@ async def request(ctx, arg):
                                 if str(i['hasFile']) == "True":
                                     msg = "This movie is already downloaded and is available in Plex."
                                 else:
-                                    msg = "The movie already exists, but is not downloaded yet. It is either not released, or just not available for download. You can check pending requests with the `!requested` command."
+                                    msg = "The movie already exists, but is not downloaded yet. It is either not released, or just not available for download. You can check pending requests with the `"+PREFIX+"requested` command."
                                     dates = release_date(imdb)
                                     digital_date = dates['digital']
                                     physical_date = dates['physical']
@@ -353,7 +353,7 @@ async def request(ctx, arg):
                             if str(i['hasFile']) == "True":
                                 msg = "This movie is already downloaded and is available in Plex."
                             elif str(i['hasFile']) == "False":
-                                msg = "The movie already exists, but is not downloaded yet. It is either not released, or just not available for download. You can check pending requests with the `!requested` command."
+                                msg = "The movie already exists, but is not downloaded yet. It is either not released, or just not available for download. You can check pending requests with the `"+PREFIX+"requested` command."
                                 dates = release_date(imdb_id)
                                 digital_date = dates['digital']
                                 physical_date = dates['physical']
