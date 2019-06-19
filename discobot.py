@@ -250,7 +250,6 @@ async def request(ctx, arg):
                         headers = {"Apikey" : ombi_api, "UserName" : "Discord"}
                         payload = {"theMovieDbId" : tmdbid}
                         r = requests.post("http://" + HOST + ":" + OMBI_PORT + "/ombi/api/v1/request/movie", json=payload, headers=headers)
-                        print(r.json())
                         if r.json()['isError'] == True:
                             # Request failed
                             msg = (r.json()['errorMessage'])
@@ -471,8 +470,23 @@ async def specs(ctx):
     used_disks = round(used_disks / 1000000000, 1)
     disks_pct = round(used_disks / total_disks*100, 1)
 
-    msg = "```CPU:    2x Intel Xeon CPU E5-2620 @ 2.00GHz, 12 cores 24 threads\n"
-    msg +="Memory: 16GB DDR3 1600 MHz\n"
+    cpu_name = subprocess.check_output("cat /proc/cpuinfo | grep -m 1 'model name' | cut -d: -f2", shell=True).decode('ascii').lstrip().splitlines()
+    cpu_cores = subprocess.check_output("cat /proc/cpuinfo | grep -c 'model name'", shell=True).decode('ascii').splitlines()
+    physical_cpus = subprocess.check_output("cat /proc/cpuinfo | grep 'physical id' | cut -d: -f2", shell=True).decode('ascii').splitlines()
+    physical_cpus = len(set(physical_cpus))
+
+    msg = "```" + str(physical_cpus) + "x " + cpu_name[0] + ", " + cpu_cores[0] + " cores\n"
+
+    memory = subprocess.check_output("sudo dmidecode --type 17 | grep Size | grep -v 'No Module' | awk '{print $2}'", shell=True).decode('ascii').splitlines()
+    mem_size = 0
+
+    for i in memory:
+        mem_size += int(i)
+
+    mem_speed = subprocess.check_output("sudo dmidecode --type 17 | grep -m 1 Speed | grep -v 'No Module' | awk '{print $2}'", shell=True).decode('ascii').rstrip()
+    mem_type = subprocess.check_output("sudo dmidecode --type 17 | grep -m 1 Type | grep -v 'No Module' | awk '{print $2}'", shell=True).decode('ascii').rstrip()
+
+    msg +="Memory: " + str(mem_size) + " MB " + mem_type + " " + mem_speed + " MHz\n"
     msg +="Disks:  " + str(used_disks) + " TB / " + str(total_disks) + " TB (" + str(disks_pct) + "% used)```"
     await bot.send_message(ctx.message.channel, msg)
 
