@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 ## Written by Actar/Slopedoo
 ##
 ## Discord Bot for Plex to help with automation and self-servicing for users
@@ -246,13 +247,14 @@ async def request(ctx, arg):
                         r = requests.get("https://api.themoviedb.org/3/movie/"+temp+"/release_dates?api_key="+tmdb_api)
                         tmdbid = r.json()['id']
 
-                        headers = {"Apikey" : ombi_api}
+                        headers = {"Apikey" : ombi_api, "UserName" : "Discord"}
                         payload = {"theMovieDbId" : tmdbid}
                         r = requests.post("http://" + HOST + ":" + OMBI_PORT + "/ombi/api/v1/request/movie", json=payload, headers=headers)
-                        if r.json()['message'] == None:
+                        print(r.json())
+                        if r.json()['isError'] == True:
                             # Request failed
                             msg = (r.json()['errorMessage'])
-                        elif r.json()['errorMessage'] == None:
+                        elif r.json()['isError'] == False:
                             # Request succeeded
                             msg = (r.json()['message'])
                     await bot.send_message(ctx.message.channel, msg)
