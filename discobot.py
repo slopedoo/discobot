@@ -237,6 +237,15 @@ async def request(ctx, arg):
                                         msg += "```Digital Release date:  " + digital_date + "```"
                                     if physical_date != "":
                                         msg += "```Physical Release date: " + physical_date + "```"
+                                    # Do a search for the movie since it hasn't downloaded yet
+                                    with open(API_PATH+RADARR_API, 'r') as myfile:
+                                        radarr_api = myfile.read().replace('\n', '')
+                                    hdrs = {'content-type': 'application/json'}
+                                    movie_ids = []
+                                    movie_ids.append(i['id'])
+                                    movsearch_json = {'name': "MoviesSearch", 'movieIds': movie_ids}
+                                    movsearch_url = "http://10.0.0.2:7878/radarr/api/command?apikey=" + radarr_api
+                                    r = requests.post(movsearch_url, json=movsearch_json, headers=hdrs)
                                 break
                     # Send the request
                     if msg == "":
