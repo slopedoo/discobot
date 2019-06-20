@@ -624,8 +624,29 @@ async def releasedate(ctx, arg):
                 await bot.send_message(ctx.message.channel, msg)
 
 
-# Function to check release dates. Returns a dict with 'theatrical', 'digital' and 'physical' indexes
+# Functions to check release dates. Returns a dict with 'theatrical', 'digital' and 'physical' indexes
 # Uses the TMDb API
+def release_type(results, release_dates, country):
+    for i in results:
+        if country != "all":
+            if i['iso_3166_1'] == country:
+                for a in i['release_dates']:
+                    if a['type'] == 3 and release_dates['theatrical'] == "":
+                        release_dates['theatrical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+                    if a['type'] == 4 and release_dates['digital'] == "":
+                        release_dates['digital'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+                    if a['type'] == 5 and release_dates['physical'] == "":
+                        release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+        else:
+            for a in i['release_dates']:
+                if a['type'] == 3 and release_dates['theatrical'] == "":
+                    release_dates['theatrical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+                if a['type'] == 4 and release_dates['digital'] == "":
+                    release_dates['digital'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+                if a['type'] == 5 and release_dates['physical'] == "":
+                    release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+    return release_dates
+
 def release_date(imdb):
     with open(API_PATH+TMDB_API, 'r') as myfile:
         tmdb_api = myfile.read().replace('\n', '')
@@ -634,57 +655,13 @@ def release_date(imdb):
     results = r.json()
     results = results['results']
     release_dates = { 'theatrical':'' , 'digital':'' , 'physical':''}
-    # First check US releases
-    for i in results:
-        if i['iso_3166_1'] == "US":
-            for a in i['release_dates']:
-                if a['type'] == 3 and release_dates['theatrical'] == "":
-                    release_dates['theatrical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-                if a['type'] == 4 and release_dates['digital'] == "":
-                    release_dates['digital'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-                if a['type'] == 5 and release_dates['physical'] == "":
-                    release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-    # Then check UK
-    for i in results:
-        if i['iso_3166_1'] == "UK":
-            for a in i['release_dates']:
-                if a['type'] == 3 and release_dates['theatrical'] == "":
-                    release_dates['theatrical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-                if a['type'] == 4 and release_dates['digital'] == "":
-                    release_dates['digital'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-                if a['type'] == 5 and release_dates['physical'] == "":
-                    release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-    # Then check Sweden
-    for i in results:
-        if i['iso_3166_1'] == "SE":
-            for a in i['release_dates']:
-                if a['type'] == 3 and release_dates['theatrical'] == "":
-                    release_dates['theatrical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-                if a['type'] == 4 and release_dates['digital'] == "":
-                    release_dates['digital'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-                if a['type'] == 5 and release_dates['physical'] == "":
-                    release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-    # Then Norway
-    for i in results:
-        if i['iso_3166_1'] == "NO":
-            for a in i['release_dates']:
-                if a['type'] == 3 and release_dates['theatrical'] == "":
-                    release_dates['theatrical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-                if a['type'] == 4 and release_dates['digital'] == "":
-                    release_dates['digital'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-                if a['type'] == 5 and release_dates['physical'] == "":
-                    release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-    # Lastly check every other country
-    for i in results:
-        #if release_dates['theatrical'] != "" and release_dates['digital'] != "" and release_dates['physical'] != "":
-        #    break
-        for a in i['release_dates']:
-            if a['type'] == 3 and release_dates['theatrical'] == "":
-                release_dates['theatrical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-            if a['type'] == 4 and release_dates['digital'] == "":
-                release_dates['digital'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
-            if a['type'] == 5 and release_dates['physical'] == "":
-                release_dates['physical'] = a['release_date'][:10] + " (" + i['iso_3166_1'] + ")"
+
+    release_dates = release_type(results, release_dates, "US")
+    release_dates = release_type(results, release_dates, "UK")
+    release_dates = release_type(results, release_dates, "SE")
+    release_dates = release_type(results, release_dates, "NO")
+    release_dates = release_type(results, release_dates, "all")
+
     return release_dates
 
 
