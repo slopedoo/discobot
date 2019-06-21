@@ -194,7 +194,14 @@ async def status(ctx):
     tx = tx.decode('ascii').strip()
     rx = rx.decode('ascii').strip()
 
-    msg = "System Status:\n```Uptime:      " + str(up) + " days\nCPU usage:   " + str(cpu) + "%\n"
+    # Get count of current streams
+    r = requests.get(ppurl+"get_activity")
+    a = r.json()
+    stream_count = 0
+    for i in a['response']['data']['sessions']:
+        stream_count += 1
+
+    msg = "System Status:\n```Current streams: "+str(stream_count)+"\n\nUptime:      " + str(up) + " days\nCPU usage:   " + str(cpu) + "%\n"
     msg += "Memory:      " + str(memoryUse) + "KB / " + str(memoryTot) + "KB\nTemp:        " + str(temp) + "°\n\nOut traffic: " + tx + "\nIn traffic:  " + rx + "\n\n"
     msg += "Movies:    " + str(used_mov) + " TB / " + str(total_mov) + " TB (" + str(mov_pct) + "% used)\n"
     msg += "TV Shows:  " + str(used_tv) + " TB / " + str(total_tv) + " TB (" + str(tv_pct) + "% used)```"
