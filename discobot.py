@@ -299,15 +299,15 @@ async def request(ctx, arg):
                     get_series = requests.get(get_url, headers=json_headers)
                     tvdb_id = get_series.json()['data'][0]['id']
 
-                    headers = {"Apikey" : ombi_api}
+                    headers = {"Apikey" : ombi_api, "UserName" : "Discord"}
                     payload = {"tvdbid" : tvdb_id}
                     r = requests.post("http://" + HOST + ":" + OMBI_PORT + "/ombi/api/v1/request/tv", json=payload, headers=headers)
-                    if r.json()['message'] == None:
+                    if r.json()['isError'] == True:
                         # Request failed
                         msg = (r.json()['errorMessage'])
-                    elif r.json()['errorMessage'] == None:
+                    elif r.json()['isError'] == False:
                         # Request succeeded
-                        msg = (r.json()['message'])
+                        msg = ("Request successful! It will be downloaded shortly, and notified in <#432847333894389770> when available.")
                     await bot.send_message(ctx.message.channel, msg)
             else:
                 await bot.send_message(ctx.message.channel, "Not a valid IMDB URL! It should look like this: https://www.imdb.com/title/tt123456")
