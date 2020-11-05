@@ -76,7 +76,7 @@ async def toptv(ctx):
         if r == 10:
             break
         r += 1
-    await bot.send_message(ctx.message.channel, ":tv: Top TV Shows the last month: :tv: ```"+msg+"```")
+    await ctx.message.channel.send(":tv: Top TV Shows the last month: :tv: ```"+msg+"```")
 
 @bot.command(pass_context=True)
 async def topmovie(ctx):
@@ -94,7 +94,7 @@ async def topmovie(ctx):
             break
         r += 1
 
-    await bot.send_message(ctx.message.channel, ":film_frames: Top movies the last month: :film_frames: ```"+msg+"```")
+    await ctx.message.channel.send(":film_frames: Top movies the last month: :film_frames: ```"+msg+"```")
 
 @bot.command(pass_context=True)
 async def library(ctx):
@@ -103,8 +103,7 @@ async def library(ctx):
     a = r.json()
     movies = a['response']['data'][0]['count']
     tv = a['response']['data'][1]['count']
-    await bot.send_message(ctx.message.channel, "Library statistics:\n```Movies:   " + movies + "\n" +
-            "TV Shows: " + tv + "```")
+    await ctx.message.channel.send_("Library statistics:\n```Movies:   " + movies + "\n" + "TV Shows: " + tv + "```")
 
 @bot.command(pass_context=True)
 async def search(ctx, *, text):
@@ -146,9 +145,9 @@ async def search(ctx, *, text):
         msg += "\nArtists: " + music
 
     if movies == tv == music == "":
-        await bot.send_message(ctx.message.channel, "No search results found.")
+        await ctx.message.channel.send("No search results found.")
     else:
-        await bot.send_message(ctx.message.channel, msg)
+        await ctx.message.channel.send(msg)
 
 @bot.command(pass_context=True)
 async def status(ctx):
@@ -205,7 +204,7 @@ async def status(ctx):
     msg += "Memory:      " + str(memoryUse) + "KB / " + str(memoryTot) + "KB\nTemp:        " + str(temp) + "°\n\nOut traffic: " + tx + "\nIn traffic:  " + rx + "\n\n"
     msg += "Movies:    " + str(used_mov) + " TB / " + str(total_mov) + " TB (" + str(mov_pct) + "% used)\n"
     msg += "TV Shows:  " + str(used_tv) + " TB / " + str(total_tv) + " TB (" + str(tv_pct) + "% used)```"
-    await bot.send_message(ctx.message.channel, msg)
+    await ctx.message.channel.send(msg)
 
 @bot.command(pass_context=True)
 async def request(ctx, arg):
@@ -272,7 +271,7 @@ async def request(ctx, arg):
                         elif r.json()['isError'] == False:
                             # Request succeeded
                             msg = (r.json()['message'])
-                    await bot.send_message(ctx.message.channel, msg)
+                    await ctx.message.channel.send(msg)
                 # If the result is a TV show:
                 else:
                     json_headers = {'content-type': 'application/json'}
@@ -297,22 +296,24 @@ async def request(ctx, arg):
                     # Get TVDB ID by IMDb ID
                     get_url = "https://api.thetvdb.com/search/series?imdbId=" + "tt"+imdb_id
                     get_series = requests.get(get_url, headers=json_headers)
+                    print(get_series.json())
                     tvdb_id = get_series.json()['data'][0]['id']
 
                     headers = {"Apikey" : ombi_api, "UserName" : "Discord"}
                     payload = {"tvdbid" : tvdb_id}
                     r = requests.post("http://" + HOST + ":" + OMBI_PORT + "/ombi/api/v1/request/tv", json=payload, headers=headers)
+                    print(r.json())
                     if r.json()['isError'] == True:
                         # Request failed
                         msg = (r.json()['errorMessage'])
                     elif r.json()['isError'] == False:
                         # Request succeeded
                         msg = ("Request successful! It will be downloaded shortly, and notified in <#432847333894389770> when available.")
-                    await bot.send_message(ctx.message.channel, msg)
+                    await ctx.message.channel.send(msg)
             else:
-                await bot.send_message(ctx.message.channel, "Not a valid IMDB URL! It should look like this: https://www.imdb.com/title/tt123456")
+                await ctx.message.channel.send("Not a valid IMDB URL! It should look like this: https://www.imdb.com/title/tt123456")
         else:
-            await bot.send_message(ctx.message.channel, "Not a valid IMDB URL!")
+            await ctx.message.channel.send("Not a valid IMDB URL!")
     else:
         # If the arg is not a URL we do a search for the movie on IMDb
         arg = ctx.message.content[9:]
@@ -345,15 +346,15 @@ async def request(ctx, arg):
                 msg += title + "{:<25}".format(i['imdb_url'] + "\n")
                 c += 1
 
-            await bot.send_message(ctx.message.channel, msg)
-            await bot.send_message(ctx.message.channel, "Choose a movie by typing the corresponding number")
+            await ctx.message.channel.send(msg)
+            await ctx.message.channel.send("Choose a movie by typing the corresponding number")
             response = await bot.wait_for_message(author=ctx.message.author,timeout=30)
 
             if response != None:
                 msg = ""
                 # Check that the response is within the range of options
                 if int(response.content) > len(choices):
-                    await bot.send_message(ctx.message.channel, "Not a valid option.")
+                    await ctx.message.channel.send("Not a valid option.")
                     return
 
                 response = int(response.content)-1
@@ -400,7 +401,7 @@ async def request(ctx, arg):
                     elif r.json()['errorMessage'] == None:
                         # Request succeeded
                         msg = (r.json()['message'])
-                await bot.send_message(ctx.message.channel, msg)
+                await ctx.message.channel.send(msg)
 
 @bot.command(pass_context=True)
 async def requested(ctx):
@@ -443,7 +444,7 @@ async def requested(ctx):
 
     msg += "```"
 
-    await bot.send_message(ctx.message.channel, msg)
+    await ctx.message.channel.send(msg)
 
 
 @bot.command(pass_context=True)
@@ -465,9 +466,9 @@ async def streams(ctx):
         msg += "{:<15}".format(i['stream_container_decision']) + " | " + "{:>3}".format(i['progress_percent']) + "% (" + i['state'] + ")\n"
 
     if msg != "":
-        await bot.send_message(ctx.message.channel, "Current streams: ```" + msg + "```")
+        await ctx.message.channel.send("Current streams: ```" + msg + "```")
     else:
-        await bot.send_message(ctx.message.channel, "No streams currently playing.")
+        await ctx.message.channel.send("No streams currently playing.")
 
 @bot.command(pass_context=True)
 async def specs(ctx):
@@ -504,7 +505,7 @@ async def specs(ctx):
 
     msg +="Memory: " + str(mem_size) + " MB " + mem_type + " " + mem_speed + " MHz\n"
     msg +="Disks:  " + str(used_disks) + " TB / " + str(total_disks) + " TB (" + str(disks_pct) + "% used)```"
-    await bot.send_message(ctx.message.channel, msg)
+    await ctx.message.channel.send(msg)
 
 @bot.command(pass_context=True)
 async def new(ctx):
@@ -535,7 +536,7 @@ async def new(ctx):
         msg += "{:41s}".format(full_title) + "{:>8s}".format(i['library_name']) + " | Added at " + date_added + "\n"
         c = c + 1
 
-    await bot.send_message(ctx.message.channel, "Most recently added items: ```" + msg + "```")
+    await ctx.message.channel.send("Most recently added items: ```" + msg + "```")
 
 @bot.command(pass_context=True)
 async def releasedate(ctx, arg):
@@ -567,11 +568,11 @@ async def releasedate(ctx, arg):
                         msg += "```Digital Release date:  " + digital_date + "```"
                     if physical_date != "":
                         msg += "```Physical Release date: " + physical_date + "```"
-                    await bot.send_message(ctx.message.channel, msg)
+                    await ctx.message.channel.send(msg)
             else:
-                await bot.send_message(ctx.message.channel, "Not a valid IMDB URL!")
+                await ctx.message.channel.send("Not a valid IMDB URL!")
         else:
-            await bot.send_message(ctx.message.channel, "Not a valid IMDB URL!")
+            await ctx.message.channel.send("Not a valid IMDB URL!")
     else:
         # If the arg is not a URL we do a search for the movie on IMDb
         arg = ctx.message.content[9:]
@@ -604,14 +605,14 @@ async def releasedate(ctx, arg):
                 msg += title + "{:<25}".format(i['imdb_url'] + "\n")
                 c += 1
 
-            await bot.send_message(ctx.message.channel, msg)
-            await bot.send_message(ctx.message.channel, "Choose a movie by typing the corresponding number")
+            await ctx.message.channel.send(msg)
+            await ctx.message.channel.send("Choose a movie by typing the corresponding number")
             response = await bot.wait_for_message(author=ctx.message.author,timeout=60)
 
             if response != None:
                 # Check that the response is within the range of options
                 if int(response.content) > len(choices):
-                    await bot.send_message(ctx.message.channel, "Not a valid option.")
+                    await ctx.message.channel.send("Not a valid option.")
                     return
 
                 response = int(response.content)-1
@@ -628,7 +629,7 @@ async def releasedate(ctx, arg):
                     msg += "```Digital Release date:  " + dates['digital'] + "```"
                 if dates['physical'] != "":
                     msg += "```Physical Release date: " + dates['physical'] + "```"
-                await bot.send_message(ctx.message.channel, msg)
+                await ctx.message.channel.send(msg)
 
 
 # Functions to check release dates. Returns a dict with 'theatrical', 'digital' and 'physical' indexes
