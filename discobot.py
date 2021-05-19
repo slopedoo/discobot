@@ -17,7 +17,7 @@ import asyncio, time, requests, json, psutil, os
 #logging.basicConfig()
 
 PREFIX = "!"
-NETWORK_INTERFACE = "enp3s0"
+NETWORK_INTERFACE = "ens18"
 
 # Path to API files
 API_PATH = "/home/sigurd/tools/discobot/"
@@ -157,7 +157,8 @@ async def status(ctx):
     mem = psutil.virtual_memory()
     memoryTot = int(mem[0]/1000000)
     memoryUse = memoryTot - int(mem[1]/1000000)
-    temp = psutil.sensors_temperatures()['coretemp'][0][1]
+    #temp = psutil.sensors_temperatures()['coretemp'][0][1]
+    subprocess.check_output("ls /mnt/*", shell=True)
 
     total = subprocess.check_output("df | grep "+MOV_PATH+" | awk '{print $2}'", shell=True).decode('ascii').splitlines()
     used = subprocess.check_output("df | grep "+MOV_PATH+" | awk '{print $3}'", shell=True).decode('ascii').splitlines()
@@ -201,7 +202,7 @@ async def status(ctx):
         stream_count += 1
 
     msg = "System Status:\n```Current streams: "+str(stream_count)+"\n\nUptime:      " + str(up) + " days\nCPU usage:   " + str(cpu) + "%\n"
-    msg += "Memory:      " + str(memoryUse) + "KB / " + str(memoryTot) + "KB\nTemp:        " + str(temp) + "°\n\nOut traffic: " + tx + "\nIn traffic:  " + rx + "\n\n"
+    msg += "Memory:      " + str(memoryUse) + "KB / " + str(memoryTot) + "KB\n\nOut traffic: " + tx + "\nIn traffic:  " + rx + "\n\n"
     msg += "Movies:    " + str(used_mov) + " TB / " + str(total_mov) + " TB (" + str(mov_pct) + "% used)\n"
     msg += "TV Shows:  " + str(used_tv) + " TB / " + str(total_tv) + " TB (" + str(tv_pct) + "% used)```"
     await ctx.message.channel.send(msg)
